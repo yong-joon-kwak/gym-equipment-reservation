@@ -2,7 +2,7 @@
 
 > ⚠ **§1~§5 는 재작성 대기 중이다.** 시간 슬롯 예약을 전제로 쓰였는데, 제품이 실시간 점유·대기열로 바뀌었다([`../../README.md`](../../README.md)). 재작성 전까지 **구현 근거로 쓰지 않는다.** §6(프로젝트 구성·환경 변수·테스트 배치)은 그대로 유효하다.
 >
-> `apps/backend` 의 **구조와 규칙 파라미터의 정본**이다.
+> `apps/backend` 의 **구조와 규칙 파라미터의 정본**이다. 엔티티 설계(§2 모델·§4 테이블)는 [`data-model.md`](data-model.md) 로 이관할 예정이고, 이관 후 이 문서에는 아키텍처(계층·매핑·동시성)만 남는다.
 >
 > 되풀이하지 않는 것: 제품 범위 → [`../../README.md`](../../README.md) · 기능이 무엇을 보장하는가 → [`features/`](../features/equipment-catalog/README.md) · 테스트 티어와 라벨 규약 → [`coding/test-as-specification.md`](../coding/test-as-specification.md) · OpenAPI 생성 경로 → [`api-contract.md`](api-contract.md) · 만드는 순서 → [`BUILD-PLAN.md`](../BUILD-PLAN.md).
 >

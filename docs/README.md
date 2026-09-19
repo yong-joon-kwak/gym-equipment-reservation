@@ -15,9 +15,14 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 | 개발 정책·AI 권한 경계·정지선 | [`AGENTS.md`](../AGENTS.md) | 링크 |
 | 왜 모노레포인가 · apps/packages 경계의 근거 | [`architecture/monorepo.md`](architecture/monorepo.md) | 링크 |
 | OpenAPI → TS 계약 생성 경로·도구 선택 | [`architecture/api-contract.md`](architecture/api-contract.md) | 링크 |
-| 백엔드 계층·도메인 파라미터·거부 사유·스키마 | [`architecture/backend.md`](architecture/backend.md) | 링크 |
+| 백엔드 아키텍처(계층·의존 방향·매핑·동시성)·도메인 파라미터·거부 사유 | [`architecture/backend.md`](architecture/backend.md) | 링크 |
 | 테스트 티어(T1~T4)·라벨 규약·가드의 정의 | [`coding/test-as-specification.md`](coding/test-as-specification.md) | 링크 |
 | 기능의 범위와 **최소 보장** | `features/<슬러그>/README.md` | 링크 |
+| 비즈니스 흐름·시스템 경계·레이어(그림) | `architecture/system-overview.md` | 링크. 만들어진 뒤의 사실은 코드가 정본 |
+| 엔티티 설계(논리 ERD·관계·식별자/상태/감사 필드 정책) | `architecture/data-model.md` — 현재 `backend.md` §4 에서 이관 예정 | 링크 |
+| 도메인 용어의 정의 | `business/domain-glossary.md` | 링크. 용어를 바꾸면 쓰는 곳을 같은 커밋에서 |
+| BUILD-PLAN 한 단계의 세부 순서 | `plans/<단계>-<이름>.md` | 링크 |
+| 설계 문서의 산출물·골격·다이어그램 규약·화면 문구 규칙 | [`ai-agent/README.md`](ai-agent/README.md) | 링크 |
 | 무엇을 어떤 순서로 만드는가 | [`BUILD-PLAN.md`](BUILD-PLAN.md) | 링크 |
 | **실제로 실행되는 가드 설정** | `lefthook.yml` · `.github/workflows/ci.yml` (코드) | 설명만. **YAML 을 문서에 복붙하지 않는다** |
 | 이 데모가 풀지 못한 것 | [`BUILD-PLAN.md` §한계](BUILD-PLAN.md) | 자기 주제에 한정된 한 줄 + 링크 |
@@ -28,7 +33,7 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 
 ## 2. 문서 상태 (frontmatter)
 
-`features/**/README.md` 와 계획 문서([`BUILD-PLAN.md`](BUILD-PLAN.md))는 첫 줄 frontmatter 에 `status` 를 갖는다. AGENTS.md §5 의 정지선이 이 값을 읽는다. 단 `FeatureCoverageTest` 의 커버리지 하한 검사가 읽는 것은 **기능 문서의 status 뿐**이다.
+`features/**/README.md` 와 설계·계획 문서([`BUILD-PLAN.md`](BUILD-PLAN.md) · `plans/*.md` · 설계 문서 3종)는 첫 줄 frontmatter 에 `status` 를 갖는다. 설계 문서 3종(`system-overview` · `data-model` · `domain-glossary`)은 **사람만 바꾸는** `user_validated` 를 더 갖는다 — [`ai-agent/README.md`](ai-agent/README.md) §4. AGENTS.md §5 의 정지선이 이 값을 읽는다. 단 `FeatureCoverageTest` 의 커버리지 하한 검사가 읽는 것은 **기능 문서의 status 뿐**이다.
 
 ```yaml
 ---
@@ -44,7 +49,7 @@ status: planned
 | `blocked` | 결정 대기 | **구현 금지.** 무엇을 누구에게 물어야 하는지가 문서에 적혀 있다 |
 | `superseded` | 폐기 | 구현 근거로 쓰지 않는다. 대체 문서 링크가 문서 안에 있어야 한다 |
 
-`done` 의 조건은 하나다: **문서의 최소 보장 각 줄에 대응하는 테스트가 실재하고 초록.**
+`done` 의 조건은 하나다: **문서의 최소 보장 각 줄에 대응하는 테스트가 실재하고 초록.** 계획 문서에서는 **BUILD-PLAN §3 의 해당 단계 완료 조건이 충족됨**을, 설계 문서 3종에서는 **최소 포함 항목이 채워지고 `TBD` 가 남지 않음**을 뜻한다. 확정 여부는 `done` 이 아니라 `user_validated` 가 말한다.
 
 > 구현이 0인데 `done` 을 적지 않는다. 이 저장소는 실제로 한동안 그 상태였다 — 기능 문서가 `done` 인데 코드가 한 줄도 없었다. 그것이 "가드 없는 문서는 낡으면 거짓말이 된다" 의 실례이고, 그래서 상태는 **사람이 리뷰하는 값이 아니라 가드가 읽는 값**이다.
 

@@ -2,7 +2,7 @@
 
 (운동기구 실시간 점유·대기 시스템 — AI 개발 정책 Single Source of Truth)
 
-- Version: 1.2.0
+- Version: 1.3.0
 - Last Updated: 2026-09-19
 
 ---
@@ -69,6 +69,7 @@
 - **DB 마이그레이션**: 새 파일 생성과 검토까지만. 실제 적용은 개발자.
 - **계약 변경**: OpenAPI 스펙을 바꾸면 반드시 재생성(`npm run api:sync`)하고, 생성물을 커밋한다. 생성물을 손으로 고치지 않는다.
 - **문서 상태**: `blocked`(결정 대기 — 임의 구현 금지) · `superseded`(폐기 — 구현 근거로 쓰지 않음). 전체 상태 값과 `done` 의 조건은 `docs/README.md` §2.
+- **설계·계획 문서가 먼저, 구현은 사람 확인 뒤.** 에이전트는 설계 문서(시스템 개요·데이터 모델·용어집)와 단계 계획(`docs/plans/`)을 쓰고 확인을 받은 뒤 구현한다. 설계 문서의 `user_validated` 는 사람만 `true` 로 바꾼다. 작성 규칙: `docs/ai-agent/README.md`.
 - **구현이 없는 기능 문서에 `status: done` 을 적지 않는다.** 상태는 사람이 읽는 라벨이 아니라 가드(`FeatureCoverageTest`)가 읽는 값이다.
 
 ---
@@ -77,6 +78,7 @@
 
 - 제품 범위: `README.md` (루트)
 - 문서 지도·상태 규칙: `docs/README.md`
+- 설계 문서 AI 작성 지시서(산출물·골격·다이어그램·화면 문구): `docs/ai-agent/README.md`
 - 구축 계획(순서·목표 트리·한계): `docs/BUILD-PLAN.md`
 - 모노레포 구조 고찰: `docs/architecture/monorepo.md`
 - API 계약(OpenAPI → TS): `docs/architecture/api-contract.md`
@@ -93,6 +95,7 @@
 
 | 버전 | 날짜 | 변경 | 근거 |
 |---|---|---|---|
+| 1.3.0 | 2026-09-19 | 설계 문서 AI 작성 지시서 신설(`docs/ai-agent/README.md`) — ① 설계 산출물 3종: `architecture/system-overview.md` · `architecture/data-model.md`(엔티티 설계, `backend.md` §4 에서 이관 예정) · `business/domain-glossary.md`, 단계 계획은 `docs/plans/` ② 다이어그램은 Mermaid 우선·Draw.io 보강, **설계 의도**로 취급(사실의 정본은 코드) ③ 설계 문서의 `user_validated` 는 사람만 바꾼다 ④ §5 에 "문서가 먼저, 구현은 확인 뒤" 추가 | 설계·계획 문서를 에이전트가 자주 쓰게 되는데, 위치·모양·그림 규약이 없으면 문서마다 제각각이 되고 정본과 갈라진다. 사람은 그림으로 읽고 에이전트는 줄 단위 diff 로 고칠 수 있어야 한다 |
 | 1.0.0 | 2026-09-18 | 모노레포 전환에 맞춘 초기 정책 수립 — apps/packages 경계, 계약 재생성 규칙, 테스트=명세(백+프론트) | 단일 Symfony 데모를 apps/backend + apps/frontend + packages/api-client 로 진화시키며, "판정의 소유자는 백엔드"와 "생성물 수기 수정 금지"를 명시할 필요가 있었다 |
 | 1.2.0 | 2026-09-19 | 제품 재정의 반영 — ① 시간 슬롯 예약에서 **실시간 점유·대기열**로 바뀌었다(정본: 루트 `README.md`) ② 기능 슬러그 `equipment-reservation` → `equipment-queue` ③ 로그인(세션 인증)이 범위 안으로 들어왔다 | 무엇을 만드는지가 바뀌었는데 슬러그·범위가 옛 제품을 가리키고 있었다. 슬러그는 문서·테스트 라벨·프론트 폴더를 잇는 좌표라, 틀린 채로 두면 가드가 엉뚱한 것을 검사한다 |
 | 1.1.0 | 2026-09-19 | 문서 정합성 정리 — ① 전환 계획을 구축 계획(`docs/BUILD-PLAN.md`)으로 대체 ② `docs/README.md` 신설(문서 상태·SSOT 배치) ③ 테스트 티어를 T1~T4 로 확장하고 T2 의 선을 규정 ④ 기능 슬러그를 둘로(+`equipment-catalog`) ⑤ 배포층을 범위 밖으로 명시 | 저장소를 비우고 다시 시작하면서 문서가 존재하지 않는 코드를 가리키고 있었다(기능 문서가 `done`, 계획 문서가 "옮긴다"). 또한 한계·가드 설정이 여러 문서에 복제되어 §1 의 중복 금지 원칙을 문서 세트 스스로 어기고 있었다 |

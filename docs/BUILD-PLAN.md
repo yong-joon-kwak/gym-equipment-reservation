@@ -64,7 +64,12 @@ gym-equipment-reservation/
     ├── architecture/monorepo.md
     ├── architecture/api-contract.md
     ├── architecture/backend.md
+    ├── architecture/system-overview.md   # 비즈니스 흐름·경계·레이어
+    ├── architecture/data-model.md        # 엔티티 설계 (논리 ERD)
+    ├── business/domain-glossary.md       # 도메인 용어집
     ├── coding/test-as-specification.md
+    ├── ai-agent/README.md        # 설계 문서 AI 작성 지시서
+    ├── plans/                    # 단계별 세부 계획 (<단계>-<이름>.md)
     └── features/
         ├── equipment-queue/README.md
         └── equipment-catalog/README.md

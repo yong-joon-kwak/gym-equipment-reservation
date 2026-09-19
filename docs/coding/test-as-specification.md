@@ -63,15 +63,21 @@
 public function testLimitsExtensionWhenSomeoneIsWaiting(): void
 ```
 
+- `#[Feature]` 와 `#[Group]` 은 **클래스와 메서드 어디에나** 붙인다. `#[Feature]` 는 메서드의 것이 클래스의 것을 덮는다 — 판정 객체 한 파일이 두 기능의 보장을 함께 다룰 수 있게 하려는 것이다(예: `TagPolicyTest` 는 `equipment-queue` 와 `equipment-catalog` 를 함께 본다).
+- `#[Feature]` 정의는 `tests/Support/Feature.php`.
+
 ### 가드 — `tests/Architecture/FeatureCoverageTest.php` (T4)
 
-세 가지를 검사한다. **빈칸이 문서 리뷰가 아니라 테스트 실패로 드러난다.**
+네 가지를 검사한다. **빈칸이 문서 리뷰가 아니라 테스트 실패로 드러난다.** 검사는 테스트 **메서드** 단위로, 리플렉션으로 PHP 가 실제로 읽은 어트리뷰트만 본다.
 
 | 검사 | 내용 | 실패하는 경우 |
 |---|---|---|
 | **슬러그 실재성** | 모든 `#[Feature]` 값에 대응하는 `docs/features/<슬러그>/` 가 존재하는가 | 오타·사라진 기능 폴더 |
 | **커버리지 하한** | `status: done`·`in-progress` 인 기능마다 T3 통합 테스트가 최소 1개 있는가 | 문서만 done 이고 흐름 검증이 없는 기능 |
-| **라벨 누락** | `#[Feature]` 없는 테스트 클래스가 없는가 (화이트리스트 예외만 허용) | 좌표 없이 떠도는 테스트 |
+| **라벨 누락** | `#[Feature]` 가 없는 테스트가 없는가. 화이트리스트는 `tests/Support/`(테스트 아님)·`tests/Architecture/`(저장소 전체를 보는 가드) | 좌표 없이 떠도는 테스트 |
+| **티어 라벨** | 모든 테스트가 `unit`·`collaboration`·`integration`·`structure` 중 **정확히 하나**의 `#[Group]` 을 갖는가 | 티어 라벨이 빠져 어떤 가드(`--group`)에서도 돌지 않고 조용히 사라지는 테스트 |
+
+의존 방향은 같은 폴더의 `DependencyDirectionTest` 가 검사한다 — `src/Domain`·`src/Application` 이 [`backend.md`](../architecture/backend.md) §1 의 허용 목록 밖 이름공간을 쓰면 실패한다.
 
 커버리지 하한 검사가 의미를 가지려면 기능이 둘 이상이어야 한다. 이 저장소가 `equipment-queue` 와 `equipment-catalog` 를 두는 이유 중 하나다.
 

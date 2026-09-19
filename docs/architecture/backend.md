@@ -38,13 +38,15 @@ apps/backend/src/
 | 계층 | 알아도 되는 것 | 절대 모르는 것 |
 |---|---|---|
 | `Domain` | PHP 표준 · `Psr\Clock` · `Doctrine\ORM\Mapping` 어트리뷰트(메타데이터만) · `Symfony\Component\Uid`(식별자 값 객체) | Doctrine 의 동작(`EntityManager` · 리포지토리 기반 클래스 · 라이프사이클 콜백) · 그 밖의 Symfony(커널·DI·HTTP·Security) · 다른 계층 |
-| `Application` | `Domain` (인터페이스로만 밖을 부른다) | Doctrine · HTTP |
+| `Application` | `Domain` (인터페이스로만 밖을 부른다) · `Psr\Clock` · `Symfony\Component\Uid` | Doctrine · HTTP · `Infrastructure` · `Ui` |
 | `Infrastructure` | `Domain` · Doctrine · Symfony Security | `Ui` |
 | `Ui/Http` | `Application` · DTO | `Domain` 엔티티를 응답에 직접 싣지 않는다 |
 
 엔티티는 `Domain` 에 두고 Doctrine 매핑 어트리뷰트만 붙인다([`persistence.md`](persistence.md) §1). 어트리뷰트는 메타데이터일 뿐이라 도메인이 Doctrine 의 동작을 알게 되지는 않는다. `Domain` 에 허용되는 Doctrine 의존은 **`Doctrine\ORM\Mapping` 네임스페이스 하나뿐**이다.
 
 허용 목록의 기준은 이름이 아니라 **상태나 입출력을 가진 프레임워크 기능인가**다. `Symfony\Component\Uid` 는 이름에 Symfony 가 붙지만 커널·컨테이너 없이 쓰는 값 객체라 허용한다(§8 D3). 반대로 `EntityManager` 는 Doctrine 의 값이 아니라 동작이라 금지한다.
+
+이 표의 `Domain` · `Application` 행은 `tests/Architecture/DependencyDirectionTest`(T4)가 강제한다. 표를 바꾸면 그 테스트를 같은 커밋에서 고친다.
 
 ### 엔티티와 리포지토리가 놓이는 자리
 
@@ -220,7 +222,6 @@ final readonly class TagPolicy
 
 | 항목 | 언제 정하나 | 무엇에 달렸나 |
 |---|---|---|
-| 의존 방향 가드 | 2-3 단계(T4 가드) | [`test-as-specification.md`](../coding/test-as-specification.md) §2 의 계층별 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 §1 허용 목록(`Doctrine\ORM\Mapping` · `Symfony\Component\Uid`) 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
 | 트랜잭션 실행기 | 4 단계 | 경계는 `Application` 에 두는데(§3) `Application` 은 Doctrine 을 모른다(§1). `flush`·커밋을 부를 인터페이스(예: `TransactionRunner::run(callable)`)를 `Application` 에 두고 구현을 `Infrastructure` 에 두는 안이 유력하다. T2 는 즉시 실행하는 가짜를 쓴다 |
 | 엔티티 클래스를 `final` 로 둘 수 있는가 | 4 단계 | Doctrine 의 지연 로딩 방식(프록시 · PHP 8.4 네이티브 지연 객체)에 달렸다. 실제로 돌려 보고 정한다 |
 | 시드 계정을 넣는 방법 | 5-1 단계 | 개발용 콘솔 명령과 데이터 마이그레이션 중 하나. 비밀번호 해시가 필요하므로 콘솔 명령이 유력하다 |
@@ -242,6 +243,7 @@ final readonly class TagPolicy
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §1 허용 목록을 `DependencyDirectionTest` 가 강제한다고 명시, `Application` 행에 `Psr\Clock`·uid 와 바깥 계층 금지를 적음. §7 에서 "의존 방향 가드" 를 지움(2-3 에서 구현) | [`plans/2-3-feature-guard.md`](../plans/2-3-feature-guard.md) D6 |
 | 2026-09-19 | §8 설계 결정 신설(D1 엔티티는 불변식·계산은 판정 객체, D2 `ManyToOne` 단방향, D3 도메인이 `Symfony\Component\Uid` 로 식별자 생성, D4 2단계 엔티티는 ORM 어트리뷰트 없이). §1 허용 목록에 uid 추가와 허용 기준, §2.1·§2.2·§2.4·§2.6 을 D1 에 맞춤. §7 에 트랜잭션 실행기·`final` 여부 추가 | 사용자 논의 — 엔티티를 ERD 관점으로 볼지 DDD 관점으로 볼지 비교해 중간 지점을 골랐다. id 참조는 관계가 코드에 남지 않는다는 사용자 지적을 받아 철회 |
 | 2026-09-19 | 문서 분리 — 거부 사유·엔드포인트·응답 형태(옛 §3·§5.1·§5.3)는 `api-contract.md` §1~§3 으로, 물리 매핑·생성 컬럼·마이그레이션(옛 §4.1~§4.3·§4.6)과 생성 컬럼 매핑 미결 항목은 `persistence.md` 로, 의존성·스크립트·정적 분석·환경 변수(옛 §6.1~§6.3·§6.5)는 `apps/backend/README.md` 로, 계층별 티어 표와 테스트 배치(옛 §6.4)는 `test-as-specification.md` §2 로, 만료 시각 메서드 표(옛 §2.6)는 `data-model.md` §5 로 옮김. 판정 순서는 `system-overview.md` §2.1 만 소유. 절 번호를 §1~§7 로 다시 매김 | 사용자 결정 — 한 문서가 계약·물리 DB·개발 환경까지 담아, 읽는 사람과 승인하는 사람(AGENTS.md §3)이 다른 내용이 섞여 있었다. 같은 사실이 두 벌(티어 표·판정 순서)인 곳도 정리한다 |
 | 2026-09-19 | §1 에 "엔티티와 리포지토리가 놓이는 자리" 추가 — `Domain` 은 계층이고 엔티티는 그 안의 한 종류, 개념별 배치, 리포지토리는 인터페이스(`Domain`)·구현(`Infrastructure`)으로 분리. `Domain` 에 허용되는 Doctrine 의존을 `Doctrine\ORM\Mapping` 하나로 명시. 옛 §4.1 에 Symfony 기본값과 다른 설정, 옛 §8 에 의존 방향 가드 추가 | 사용자 논의 — 엔티티를 영속성 기준으로 도메인과 나누면 판정 객체가 바깥 계층에 의존하게 된다. Symfony 기본 `src/Repository` 는 Doctrine 구현이라 도메인에 그대로 들일 수 없다 |

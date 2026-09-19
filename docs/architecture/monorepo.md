@@ -22,7 +22,7 @@
 | `apps/` | 실행 단위 (backend · frontend) | 함께 바뀌는 코드 전체 |
 | `packages/` | 앱 사이의 공용 계약 (api-client) | 다시 만들지 말아야 할 것 |
 | `docs/ · AGENTS.md` | 개발의 출발점·기준 | 무엇을 · 어떤 규칙으로 · 어디까지 |
-| 인프라 (`lefthook`·`.github`·`docker-compose`) | 검증과 배포 | 무엇이 커밋·배포될 수 있나 |
+| 인프라 (`lefthook`·`.github`) | 검증과 배포 | 무엇이 커밋·배포될 수 있나 |
 
 보통 모노레포는 위 둘(apps·packages)만 이야기한다. 이 데모는 아래 둘 — 문서(AGENTS.md·테스트=명세)와 인프라(가드·CI) — 도 같은 커밋 단위로 함께 바뀌게 둔다. 그래야 AI 가 전체를 알고 일한다.
 

@@ -29,7 +29,6 @@ gym-equipment-reservation/
 ├── CLAUDE.md                     # "AGENTS.md 를 따르라" 만
 ├── package.json                  # npm workspaces 루트 (apps/frontend, packages/*)
 ├── lefthook.yml                  # 커밋/푸시 가드 (백+프론트)
-├── docker-compose.yml            # MariaDB 11.4
 ├── .env.dist                     # 복사해 쓰는 환경 변수 견본
 ├── .github/workflows/ci.yml      # backend · frontend · contract 3잡
 │
@@ -99,9 +98,9 @@ gym-equipment-reservation/
 
 SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활성 슬롯 중복 저장을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
 
-- 로컬: `docker compose up -d` → `DATABASE_URL` 은 `.env.dist` 를 복사한 `apps/backend/.env` 에.
-- CI: GitHub Actions 의 `services:` 로 같은 MariaDB 이미지를 띄운다.
-- 대가: **docker 없이는 통합 테스트를 못 돌린다.** T1·T2·T4 는 DB 없이 돌므로 커밋 가드는 영향받지 않는다.
+- 로컬: 개발 기기에 MariaDB 11.4 를 직접 설치해 띄운다(macOS 는 `brew install mariadb@11.4` → `brew services start mariadb@11.4`). 빈 스키마 하나를 만들고, 접속 정보는 `.env.dist` 를 복사한 `apps/backend/.env` 의 `DATABASE_URL` 에 넣는다.
+- CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 11.4 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
+- 대가: **로컬에 MariaDB 가 없으면 통합 테스트를 못 돌린다.** T1·T2·T4 는 DB 없이 돌므로 커밋 가드는 영향받지 않는다.
 
 ---
 
@@ -109,10 +108,10 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 
 | 단계 | 할 일 | 완료 조건 |
 |---|---|---|
-| 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `docker-compose.yml` · `.env.dist` · `.gitignore` · `.github/workflows/ci.yml` 골격 | `docker compose up -d` 로 DB 가 뜨고 `lefthook install` 이 된다 |
+| 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.env.dist` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
 | 2 | `apps/backend` 골격 + **도메인 T1** — Symfony 7.4 skeleton, 순수 도메인(`Reservation`·`Equipment`·`ReservationPolicy`)과 목 없는 규칙 테스트 | `composer -d apps/backend test` · `stan`(max) 초록 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
-| 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (docker 필요) |
+| 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
 | 5 | HTTP + **OpenAPI** — 컨트롤러·요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` | `apps/backend/openapi/openapi.json` 생성됨 |
 | 6 | `packages/api-client` — `openapi-typescript` 로 `src/generated.ts`, 얇은 `index.ts`(ky 인터셉터·거부 사유 에러 타입) | `npm -w packages/api-client run build` 통과 |
 | 7 | `apps/frontend` — Vue 3 + Vite + TS. 예약 화면과 기구 목록. `@gym/api-client` 만 의존 | `vue-tsc --noEmit` + `vite build` 통과 |
@@ -170,5 +169,5 @@ Symfony Controller + DTO
 | **packages 가 하나다** | `api-client` 하나뿐 | 계약의 개수는 소비자 수를 따라간다. 앱이 늘어야 공용 규칙의 이점이 실현된다 |
 | **프론트의 테스트=명세 강제가 백보다 약하다** | 백의 `FeatureCoverageTest` 에 해당하는 리플렉션 가드가 프론트에 없다 | 파일 규칙(`features/<슬러그>/*.spec.ts`)과 작은 lint 스크립트로 대신한다. 이 비대칭을 숨기지 않는다 |
 | **일괄 배포 비용** | 한 앱만 고쳐도 전체가 빌드된다 | 앱이 늘면 "변경된 앱만 빌드하되 배포는 함께" 로 절충한다. 배포 단위를 쪼개는 것은 마지막 선택지 — 쪼개는 순간 없애려던 어긋난 구간이 돌아온다 |
-| **docker 없이는 T3 를 못 돌린다** | MariaDB 단일 | 동시성 보장을 SQLite 에서 흉내 내는 것보다, 못 돌리는 것을 드러내는 편이 정직하다 |
+| **로컬 MariaDB 없이는 T3 를 못 돌린다** | MariaDB 단일 | 동시성 보장을 SQLite 에서 흉내 내는 것보다, 못 돌리는 것을 드러내는 편이 정직하다 |
 | **측정하지 않는다** | 관측성 체계 없음. "테스트=명세가 동반 수정 빈도를 줄였는가" 를 이 저장소에서는 수치로 보이지 못한다 | 데모 규모에서 나오는 숫자는 의미가 없다. 지표는 실무 저장소의 몫이다 |

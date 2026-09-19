@@ -214,7 +214,7 @@ final readonly class TagPolicy
 
 | 항목 | 언제 정하나 | 무엇에 달렸나 |
 |---|---|---|
-| 의존 방향 가드 | 3 단계(T4 가드) | [`test-as-specification.md`](../coding/test-as-specification.md) §2 의 계층별 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 `Doctrine\ORM\Mapping` 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
+| 의존 방향 가드 | 2-3 단계(T4 가드) | [`test-as-specification.md`](../coding/test-as-specification.md) §2 의 계층별 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 `Doctrine\ORM\Mapping` 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
 | 시드 계정을 넣는 방법 | 5-1 단계 | 개발용 콘솔 명령과 데이터 마이그레이션 중 하나. 비밀번호 해시가 필요하므로 콘솔 명령이 유력하다 |
 
 ---

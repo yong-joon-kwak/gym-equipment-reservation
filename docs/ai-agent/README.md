@@ -35,7 +35,7 @@
 | **A. 시스템 개요** | `docs/architecture/system-overview.md` | 비즈니스 흐름과 시스템 경계 | 컨텍스트 다이어그램(사용자·외부 시스템·경계) · 핵심 유스케이스 흐름 2~5개(**거부·실패 흐름 포함**) · 레이어 구성 |
 | **B. 데이터 모델** | `docs/architecture/data-model.md` | 엔티티 설계 | 핵심 엔티티 ERD · 관계(1:N, N:M)와 그 의미 · 식별자·상태 값·감사 필드(`created_at` 등) 정책 |
 | **C. 도메인 용어집** | `docs/business/domain-glossary.md` | 용어의 정의와 코드 이름 | 아래 표 컬럼 6개 |
-| 단계 계획 | `docs/plans/<단계>-<이름>.md` 예: `plans/2-2-domain-t1.md` | [`BUILD-PLAN.md`](../BUILD-PLAN.md) §3 한 칸의 세부 순서 | 세부 단계 · 확인 방법 · 결정 사항 |
+| 단계 계획 | `docs/plans/<단계>-<이름>.md` 예: `plans/2-5-extension-policy.md` | [`BUILD-PLAN.md`](../BUILD-PLAN.md) §3 한 칸의 세부 순서 | 세부 단계 · 확인 방법 · 결정 사항 |
 
 - 3종은 기능별로 나누지 않고 **저장소 전체에 한 벌**이다. 기능의 범위·최소 보장은 여전히 `features/<슬러그>/README.md` 가 정본이다.
 - **B 와 [`backend.md`](../architecture/backend.md) · [`persistence.md`](../architecture/persistence.md) 의 경계**: B 는 엔티티 설계(무엇이 있고 어떻게 관계 맺는가), `backend.md` 는 백엔드 아키텍처(계층·의존 방향·판정 객체·동시성 처리)를 담는다. 엔티티 정의는 B 에만 있고, `persistence.md` 는 그 불변식을 DB 로 강제하는 물리 매핑만 담는다.
@@ -74,13 +74,13 @@ user_validated: false
 ## 변경 이력          — | 날짜 | 변경 | 근거 |
 ```
 
-단계 계획(`plans/`)은 `user_validated` 없이 `status` 만 갖고, 본문은 목표(완료 조건은 BUILD-PLAN 링크) · 세부 단계 표(`# | 할 일 | 산출물 | 확인 방법`) · 결정 사항(`결정 | 버린 선택지 | 근거`)으로 채운다.
+단계 계획(`plans/`)도 `status` 와 `user_validated` 를 갖는다. 본문은 목표(완료 조건은 BUILD-PLAN 링크) · **기대는 설계 절** 표(`문서 §절 | 이 칸에서 쓰는 것`) · 세부 단계 표(`# | 할 일 | 산출물 | 확인 방법`) · 결정 사항(`결정 | 버린 선택지 | 근거`)으로 채운다. 구현 칸의 계획은 여기에 **`#[TestDox]` 문장 목록**을 더한다 — 개발자가 코드보다 먼저 명세를 읽는 자리다([`BUILD-PLAN.md`](../BUILD-PLAN.md) §3).
 
 ---
 
 ## 4. 문서 상태와 용어집 참조 규칙
 
-상태 값의 뜻은 [`../README.md`](../README.md) §2 가 정본이다. 설계 문서 3종은 여기에 `user_validated` 를 더한다.
+상태 값의 뜻은 [`../README.md`](../README.md) §2 가 정본이다. 설계 문서 3종과 단계 계획은 여기에 `user_validated` 를 더한다.
 
 | 필드 | 누가 바꾸나 | 뜻 |
 |---|---|---|
@@ -88,6 +88,8 @@ user_validated: false
 | `user_validated: true` | **사람만** | 개발자가 내용을 확인하고 확정했다 |
 
 **에이전트는 `user_validated` 를 `true` 로 바꾸지 않는다.** 사람의 확인을 기록하는 값이라, 에이전트가 쓰면 의미가 사라진다.
+
+**확인은 절 단위로 할 수 있다.** 단계 계획의 `user_validated: true` 는 계획 자체와 함께, 계획의 "기대는 설계 절" 표에 적힌 **그 절들을 확인했다**는 뜻이다. 그 칸의 구현은 이것으로 충분하고, 설계 문서 전체의 `user_validated` 를 기다리지 않는다. 설계 문서 전체의 확인은 그 문서를 통째로 쓰는 단계(영속화 — BUILD-PLAN 4단계) 전에 받는다. 구현 중에 기대는 절이 바뀌면 계획의 `user_validated` 를 `false` 로 되돌리고 다시 확인받는다.
 
 ### 용어집을 참조하기 전에
 

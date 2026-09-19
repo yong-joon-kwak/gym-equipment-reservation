@@ -2,7 +2,7 @@
 
 (운동기구 실시간 점유·대기 시스템 — AI 개발 정책 Single Source of Truth)
 
-- Version: 1.3.0
+- Version: 1.4.0
 - Last Updated: 2026-09-19
 
 ---
@@ -69,7 +69,8 @@
 - **DB 마이그레이션**: 새 파일 생성과 검토까지만. 실제 적용은 개발자.
 - **계약 변경**: OpenAPI 스펙을 바꾸면 반드시 재생성(`npm run api:sync`)하고, 생성물을 커밋한다. 생성물을 손으로 고치지 않는다.
 - **문서 상태**: `blocked`(결정 대기 — 임의 구현 금지) · `superseded`(폐기 — 구현 근거로 쓰지 않음). 전체 상태 값과 `done` 의 조건은 `docs/README.md` §2.
-- **설계·계획 문서가 먼저, 구현은 사람 확인 뒤.** 에이전트는 설계 문서(시스템 개요·데이터 모델·용어집)와 단계 계획(`docs/plans/`)을 쓰고 확인을 받은 뒤 구현한다. 설계 문서의 `user_validated` 는 사람만 `true` 로 바꾼다. 작성 규칙: `docs/ai-agent/README.md`.
+- **설계·계획 문서가 먼저, 구현은 사람 확인 뒤.** 에이전트는 설계 문서(시스템 개요·데이터 모델·용어집)와 단계 계획(`docs/plans/`)을 쓰고 확인을 받은 뒤 구현한다. `user_validated` 는 사람만 `true` 로 바꾼다. 작성 규칙: `docs/ai-agent/README.md`.
+- **확인은 칸 단위로 받는다.** 구현 칸의 착수 조건은 그 칸의 단계 계획이 `user_validated: true` 인 것이다. 계획이 "기대는 설계 절" 로 적은 절까지가 확인 범위이고, 설계 문서 전체의 확정은 그 문서를 통째로 쓰는 단계(영속화, BUILD-PLAN 4단계) 전까지만 받으면 된다. 계획에 적히지 않은 절에 기대야 하면 멈추고 계획을 고쳐 다시 확인받는다.
 - **구현이 없는 기능 문서에 `status: done` 을 적지 않는다.** 상태는 사람이 읽는 라벨이 아니라 가드(`FeatureCoverageTest`)가 읽는 값이다.
 
 ---
@@ -83,7 +84,7 @@
 - 모노레포 구조 고찰: `docs/architecture/monorepo.md`
 - API 계약(OpenAPI → TS): `docs/architecture/api-contract.md`
 - 테스트를 명세로 쓰는 구조: `docs/coding/test-as-specification.md`
-- 기능 문서: `docs/features/equipment-queue/README.md`(작성 예정) · `docs/features/equipment-catalog/README.md`
+- 기능 문서: `docs/features/equipment-queue/README.md`(작성 예정 — BUILD-PLAN 2-2) · `docs/features/equipment-catalog/README.md`
 
 ---
 
@@ -95,6 +96,7 @@
 
 | 버전 | 날짜 | 변경 | 근거 |
 |---|---|---|---|
+| 1.4.0 | 2026-09-19 | §5 에 "확인은 칸 단위로 받는다" 추가 — 구현 칸은 그 칸의 단계 계획(`user_validated: true`)과 계획이 적은 설계 절의 확인으로 착수한다. 설계 문서 전체의 확정은 영속화(4단계) 전까지. 단계 계획도 `user_validated` 를 갖는다 | 설계 문서 전체의 확정을 구현의 전제로 두면, 2단계를 판정 객체별 칸으로 나눈 뒤에도 첫 칸이 문서 전체 검토에 막힌다. 각 칸이 실제로 기대는 절만 확인하면 검토가 작아지고, 무엇을 확인했는지도 계획에 남는다 |
 | 1.3.0 | 2026-09-19 | 설계 문서 AI 작성 지시서 신설(`docs/ai-agent/README.md`) — ① 설계 산출물 3종: `architecture/system-overview.md` · `architecture/data-model.md`(엔티티 설계, `backend.md` §4 에서 이관 예정) · `business/domain-glossary.md`, 단계 계획은 `docs/plans/` ② 다이어그램은 Mermaid 우선·Draw.io 보강, **설계 의도**로 취급(사실의 정본은 코드) ③ 설계 문서의 `user_validated` 는 사람만 바꾼다 ④ §5 에 "문서가 먼저, 구현은 확인 뒤" 추가 | 설계·계획 문서를 에이전트가 자주 쓰게 되는데, 위치·모양·그림 규약이 없으면 문서마다 제각각이 되고 정본과 갈라진다. 사람은 그림으로 읽고 에이전트는 줄 단위 diff 로 고칠 수 있어야 한다 |
 | 1.0.0 | 2026-09-18 | 모노레포 전환에 맞춘 초기 정책 수립 — apps/packages 경계, 계약 재생성 규칙, 테스트=명세(백+프론트) | 단일 Symfony 데모를 apps/backend + apps/frontend + packages/api-client 로 진화시키며, "판정의 소유자는 백엔드"와 "생성물 수기 수정 금지"를 명시할 필요가 있었다 |
 | 1.2.0 | 2026-09-19 | 제품 재정의 반영 — ① 시간 슬롯 예약에서 **실시간 점유·대기열**로 바뀌었다(정본: 루트 `README.md`) ② 기능 슬러그 `equipment-reservation` → `equipment-queue` ③ 로그인(세션 인증)이 범위 안으로 들어왔다 | 무엇을 만드는지가 바뀌었는데 슬러그·범위가 옛 제품을 가리키고 있었다. 슬러그는 문서·테스트 라벨·프론트 폴더를 잇는 좌표라, 틀린 채로 두면 가드가 엉뚱한 것을 검사한다 |

@@ -35,7 +35,7 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 
 ## 2. 문서 상태 (frontmatter)
 
-`features/**/README.md` 와 설계·계획 문서([`BUILD-PLAN.md`](BUILD-PLAN.md) · `plans/*.md` · 설계 문서 3종)는 첫 줄 frontmatter 에 `status` 를 갖는다. 설계 문서 3종(`system-overview` · `data-model` · `domain-glossary`)은 **사람만 바꾸는** `user_validated` 를 더 갖는다 — [`ai-agent/README.md`](ai-agent/README.md) §4. AGENTS.md §5 의 정지선이 이 값을 읽는다. 단 `FeatureCoverageTest` 의 커버리지 하한 검사가 읽는 것은 **기능 문서의 status 뿐**이다.
+`features/**/README.md` 와 설계·계획 문서([`BUILD-PLAN.md`](BUILD-PLAN.md) · `plans/*.md` · 설계 문서 3종)는 첫 줄 frontmatter 에 `status` 를 갖는다. 설계 문서 3종(`system-overview` · `data-model` · `domain-glossary`)과 단계 계획(`plans/*.md`)은 **사람만 바꾸는** `user_validated` 를 더 갖는다 — [`ai-agent/README.md`](ai-agent/README.md) §4. AGENTS.md §5 의 정지선이 이 값을 읽는다. 단 `FeatureCoverageTest` 의 커버리지 하한 검사가 읽는 것은 **기능 문서의 status 뿐**이다.
 
 ```yaml
 ---

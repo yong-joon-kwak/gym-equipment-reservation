@@ -37,22 +37,24 @@ apps/backend/src/
 
 | 계층 | 알아도 되는 것 | 절대 모르는 것 |
 |---|---|---|
-| `Domain` | PHP 표준 · `Psr\Clock` · `Doctrine\ORM\Mapping` 어트리뷰트(메타데이터만) | Doctrine 의 동작(`EntityManager` · 리포지토리 기반 클래스 · 라이프사이클 콜백) · Symfony · HTTP · 다른 계층 |
+| `Domain` | PHP 표준 · `Psr\Clock` · `Doctrine\ORM\Mapping` 어트리뷰트(메타데이터만) · `Symfony\Component\Uid`(식별자 값 객체) | Doctrine 의 동작(`EntityManager` · 리포지토리 기반 클래스 · 라이프사이클 콜백) · 그 밖의 Symfony(커널·DI·HTTP·Security) · 다른 계층 |
 | `Application` | `Domain` (인터페이스로만 밖을 부른다) | Doctrine · HTTP |
 | `Infrastructure` | `Domain` · Doctrine · Symfony Security | `Ui` |
 | `Ui/Http` | `Application` · DTO | `Domain` 엔티티를 응답에 직접 싣지 않는다 |
 
 엔티티는 `Domain` 에 두고 Doctrine 매핑 어트리뷰트만 붙인다([`persistence.md`](persistence.md) §1). 어트리뷰트는 메타데이터일 뿐이라 도메인이 Doctrine 의 동작을 알게 되지는 않는다. `Domain` 에 허용되는 Doctrine 의존은 **`Doctrine\ORM\Mapping` 네임스페이스 하나뿐**이다.
 
+허용 목록의 기준은 이름이 아니라 **상태나 입출력을 가진 프레임워크 기능인가**다. `Symfony\Component\Uid` 는 이름에 Symfony 가 붙지만 커널·컨테이너 없이 쓰는 값 객체라 허용한다(§8 D3). 반대로 `EntityManager` 는 Doctrine 의 값이 아니라 동작이라 금지한다.
+
 ### 엔티티와 리포지토리가 놓이는 자리
 
-`Domain` 은 계층의 이름이지 객체의 한 종류가 아니다. 엔티티는 `Domain` 에 있는 여러 종류 중 하나다. 영속되는가는 저장하는 쪽의 사정이라, 도메인 개념을 나누는 기준이 아니다.
+`Domain` 은 계층의 이름이지 객체의 한 종류가 아니다. 엔티티는 `Domain` 에 있는 여러 종류 중 하나다. 엔티티를 데이터 구조(ERD 관점)로 둘지 도메인 객체(DDD 관점)로 둘지는 §8 D1 에서 정했다 — **규칙 계산은 판정 객체, 엔티티는 속성·관계와 불변식.**
 
 | 종류 | 무엇 | 예 | 자리 |
 |---|---|---|---|
-| 엔티티 | 식별자와 수명이 있고 상태가 바뀐다 | `UsageSession` · `QueueEntry` | `Domain/<개념>/` |
+| 엔티티 | 식별자와 수명이 있고 상태가 바뀐다. 속성 · 관계(`ManyToOne` 단방향) · **사건 메서드**를 갖는다. 사건 메서드는 계산하지 않고 불변식만 검사한다 | `UsageSession` · `QueueEntry` | `Domain/<개념>/` |
 | 값 객체 | 식별자 없이 값으로만 같다 | `EquipmentCode` · `QueueRules` · `TagDecision` | `Domain/<개념>/` · `Domain/Shared/` |
-| 판정 객체 | 규칙을 판정한다(§2) | `TagPolicy` · `SettlementPolicy` | `Domain/<개념>/` |
+| 판정 객체 | 규칙을 판정하고, 규칙 값에 따라 달라지는 **시각·값을 계산**한다(§2) | `TagPolicy` · `SettlementPolicy` | `Domain/<개념>/` |
 | 리포지토리 **인터페이스** | 도메인 언어로 적은 저장·조회 약속 | `UsageSessionRepository::findActiveByMember()` | `Domain/<개념>/` |
 | 리포지토리 **구현** | Doctrine 으로 그 약속을 지킨다 | `DoctrineUsageSessionRepository` | `Infrastructure/Doctrine/` |
 | T2 가짜 | 같은 인터페이스를 메모리로 지킨다 | `InMemoryUsageSessionRepository` | `tests/Support/` |
@@ -83,7 +85,9 @@ apps/backend/src/
 |---|---|---|---|
 | `TagPolicy` | 태깅 한 번이 무엇이 되는가 | `TagFacts` · 지금 시각 | `TagDecision` |
 | `SettlementPolicy` | 지금 시각 기준으로 기록을 어떻게 확정해야 하는가 | 기구 E·회원 M 의 진행 중 기록 · 지금 시각 | 적용할 변경 목록 |
-| `ExtensionPolicy` | 연장이 되는가 | 사용 세션 · 지금 시각 | 통과, 또는 `RejectionReason` |
+| `ExtensionPolicy` | 연장이 되는가 | 사용 세션 · 지금 시각 | 통과(새 만료 시각), 또는 `RejectionReason` |
+
+판정 객체는 **판정과 계산을 함께 맡는다.** "되는가" 뿐 아니라 "되면 값이 무엇인가"(새 만료 시각, 만료 종료 시각 등)까지 돌려주고, 엔티티는 그 값을 받아 불변식을 검사한 뒤 적용한다. 규칙 값(README §3)이 바뀌면 판정 객체만 바뀐다.
 
 셋 다 `final readonly class` 이고, 생성자로는 규칙 값(`QueueRules`, §2.4)만 받는다. 저장소도 시계도 주입받지 않는다. 지금 시각은 **인자로** 받는다 — 응용 서비스가 `ClockInterface` 에서 읽어 넘긴다.
 
@@ -103,7 +107,7 @@ final readonly class TagPolicy
 | `TagDecision` | 뜻 |
 |---|---|
 | `StartSession` | 사용 시작. 회원이 다른 기구를 쓰고 있었다면 그 세션을 전환 종료한다는 표시를 함께 담는다 |
-| `Enqueue` | 대기 등록. 첫 대기라면 사용 중 세션의 만료 시각을 정해야 한다는 표시를 함께 담는다 |
+| `Enqueue` | 대기 등록. 첫 대기라면 사용 중 세션에 매길 **만료 시각**을 함께 담는다(최대 사용시간 전이면 시작 + 최대 사용시간, 넘겼으면 지금 + 초과 중 대기) |
 | `Unchanged` | 변화 없음. 이미 그 기구를 쓰는 중(→ 화면에 종료 버튼)이거나 기다리는 중(→ 순번) |
 | `Rejected` | 거부. `RejectionReason` 하나를 담는다(값 목록은 [`api-contract.md`](api-contract.md) §3) |
 
@@ -135,6 +139,8 @@ final readonly class TagPolicy
 | `requeueBlockMinutes` | 재대기 제한 |
 | `overtimeGraceMinutes` | 초과 중 대기 |
 
+`QueueRules` 는 값에 더해, **그 값만으로 끝나는 단순 계산**을 메서드로 갖는다 — 예: `requeueBlockedUntil(endedAt, hadWaiters)`. 사용 세션을 끝내는 유스케이스가 여럿(본인 종료·전환 종료·강제 종료·비활성화·만료)이라, 판정 객체 하나에 두면 나머지가 그 객체를 빌려 써야 하기 때문이다.
+
 **상수로 박지 않는다.** `QueueRules` 는 값 객체이고, 값은 `config/services.yaml` 의 파라미터에서 주입한다. T1 이 값을 바꿔 가며 경계를 검증할 수 있어야 한다. 최대 사용시간은 기구마다 다르므로 여기 없고 `Equipment` 에 있다.
 
 ### 2.5 사실은 응용 서비스가 모은다
@@ -157,7 +163,7 @@ final readonly class TagPolicy
 
 ### 2.6 만료 시각은 엔티티 메서드로만 바꾼다
 
-`expires_at` 은 여러 유스케이스(태깅·대기 취소·연장·종료)가 건드리므로, **바꾸는 방법을 `UsageSession` 의 메서드로 한정한다.** 응용 서비스가 필드를 직접 쓰지 않는다. 사건마다 어느 메서드가 무엇을 바꾸는지는 [`data-model.md` §5](data-model.md) 가 정본이다.
+`expires_at` 은 여러 유스케이스(태깅·대기 취소·연장·종료)가 건드리므로, **바꾸는 방법을 `UsageSession` 의 사건 메서드로 한정한다.** 응용 서비스가 필드를 직접 쓰지 않고, 검사 없는 setter 를 두지 않는다. 값은 판정 객체가 계산해 넘기고(§2.1), 메서드는 불변식만 검사한다. 사건마다 어느 메서드가 무엇을 받는지는 [`data-model.md` §5](data-model.md) 가 정본이다.
 
 ---
 
@@ -214,8 +220,21 @@ final readonly class TagPolicy
 
 | 항목 | 언제 정하나 | 무엇에 달렸나 |
 |---|---|---|
-| 의존 방향 가드 | 2-3 단계(T4 가드) | [`test-as-specification.md`](../coding/test-as-specification.md) §2 의 계층별 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 `Doctrine\ORM\Mapping` 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
+| 의존 방향 가드 | 2-3 단계(T4 가드) | [`test-as-specification.md`](../coding/test-as-specification.md) §2 의 계층별 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 §1 허용 목록(`Doctrine\ORM\Mapping` · `Symfony\Component\Uid`) 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
+| 트랜잭션 실행기 | 4 단계 | 경계는 `Application` 에 두는데(§3) `Application` 은 Doctrine 을 모른다(§1). `flush`·커밋을 부를 인터페이스(예: `TransactionRunner::run(callable)`)를 `Application` 에 두고 구현을 `Infrastructure` 에 두는 안이 유력하다. T2 는 즉시 실행하는 가짜를 쓴다 |
+| 엔티티 클래스를 `final` 로 둘 수 있는가 | 4 단계 | Doctrine 의 지연 로딩 방식(프록시 · PHP 8.4 네이티브 지연 객체)에 달렸다. 실제로 돌려 보고 정한다 |
 | 시드 계정을 넣는 방법 | 5-1 단계 | 개발용 콘솔 명령과 데이터 마이그레이션 중 하나. 비밀번호 해시가 필요하므로 콘솔 명령이 유력하다 |
+
+---
+
+## 8. 설계 결정
+
+| # | 결정 | 버린 선택지 | 근거 |
+|---|---|---|---|
+| D1 | **규칙 계산은 판정 객체, 엔티티는 속성·관계와 불변식.** 엔티티의 사건 메서드는 계산된 값을 받아 불변식(끝난 세션은 바뀌지 않는다, 강제 종료에만 관리자가 있다 등)만 검사한다 | ① ERD 관점 — 엔티티는 속성·관계만, 불변식까지 서비스가 지킨다 ② 풍부한 엔티티 — 만료 시각·재대기 제한 계산까지 엔티티가 한다 | ①: `UsageSession` 을 바꾸는 유스케이스가 일곱 곳 이상이라, 불변식을 서비스가 지키면 한 곳만 빠뜨려도 조용히 틀린 기록이 남는다. PHP 에는 "이 클래스만 setter 를 부른다" 를 강제할 장치가 없다. ②: 규칙 값에 따라 바뀌는 계산과 규칙 값과 무관한 불변식이 한 클래스에 섞여 읽기·테스트가 어려워진다. 규칙 테스트가 판정 객체 T1 에 모이면 기능 문서의 보장 줄과 테스트가 1:1 로 대응한다 |
+| D2 | **관계는 `ManyToOne` 단방향 객체 연관.** `UsageSession` → `Member`·`Equipment` 처럼 N 쪽에서만 가리키고, 1 쪽에 컬렉션(`OneToMany`)을 두지 않는다 | ① id(`Uuid`)만 들고 가리키기 ② 양방향 연관 | ①: FK 를 마이그레이션에 손으로 걸어야 하고, 관계가 코드에 남지 않아 문서에 의존하게 된다. ②: 양쪽을 맞춰 줄 코드가 생기고, 컬렉션을 따라가다 판정 중에 쿼리가 몰래 나간다. 판정에 필요한 기록은 응용 서비스가 먼저 읽는다(§2.5) |
+| D3 | **식별자는 도메인이 `Symfony\Component\Uid` 로 만든다**(UUIDv7). `Domain` 허용 목록에 넣는다(§1) | ① DB 자동 증가 ② 도메인 전용 ID 타입 + `IdGenerator` 인터페이스 | ①: 저장 전에는 id 가 없어 T1·T2 가 엔티티를 구분하지 못하고, 저장 전 세션을 대기(`started_usage_session_id`)가 가리킬 수 없다([`data-model.md` §3](data-model.md)). ②: 엔티티를 만들 때마다 생성기를 넘기고 테스트에 가짜 생성기가 필요하다. uid 는 상태도 입출력도 없는 값 객체라 T1 을 무겁게 하지 않는다 |
+| D4 | **2-4~2-7 의 엔티티는 ORM 어트리뷰트 없이 만든다.** 어트리뷰트와 `doctrine/orm` 설치는 4단계 | 2-4 에서 Doctrine 까지 설치 | 2단계의 목표는 DB 없는 규칙 검증이다. 어트리뷰트는 메타데이터라 나중에 붙여도 메서드 본문이 바뀌지 않는다. 설치를 앞당기면 매핑 논의가 규칙 설계를 붙잡는다 |
 
 ---
 
@@ -223,6 +242,7 @@ final readonly class TagPolicy
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §8 설계 결정 신설(D1 엔티티는 불변식·계산은 판정 객체, D2 `ManyToOne` 단방향, D3 도메인이 `Symfony\Component\Uid` 로 식별자 생성, D4 2단계 엔티티는 ORM 어트리뷰트 없이). §1 허용 목록에 uid 추가와 허용 기준, §2.1·§2.2·§2.4·§2.6 을 D1 에 맞춤. §7 에 트랜잭션 실행기·`final` 여부 추가 | 사용자 논의 — 엔티티를 ERD 관점으로 볼지 DDD 관점으로 볼지 비교해 중간 지점을 골랐다. id 참조는 관계가 코드에 남지 않는다는 사용자 지적을 받아 철회 |
 | 2026-09-19 | 문서 분리 — 거부 사유·엔드포인트·응답 형태(옛 §3·§5.1·§5.3)는 `api-contract.md` §1~§3 으로, 물리 매핑·생성 컬럼·마이그레이션(옛 §4.1~§4.3·§4.6)과 생성 컬럼 매핑 미결 항목은 `persistence.md` 로, 의존성·스크립트·정적 분석·환경 변수(옛 §6.1~§6.3·§6.5)는 `apps/backend/README.md` 로, 계층별 티어 표와 테스트 배치(옛 §6.4)는 `test-as-specification.md` §2 로, 만료 시각 메서드 표(옛 §2.6)는 `data-model.md` §5 로 옮김. 판정 순서는 `system-overview.md` §2.1 만 소유. 절 번호를 §1~§7 로 다시 매김 | 사용자 결정 — 한 문서가 계약·물리 DB·개발 환경까지 담아, 읽는 사람과 승인하는 사람(AGENTS.md §3)이 다른 내용이 섞여 있었다. 같은 사실이 두 벌(티어 표·판정 순서)인 곳도 정리한다 |
 | 2026-09-19 | §1 에 "엔티티와 리포지토리가 놓이는 자리" 추가 — `Domain` 은 계층이고 엔티티는 그 안의 한 종류, 개념별 배치, 리포지토리는 인터페이스(`Domain`)·구현(`Infrastructure`)으로 분리. `Domain` 에 허용되는 Doctrine 의존을 `Doctrine\ORM\Mapping` 하나로 명시. 옛 §4.1 에 Symfony 기본값과 다른 설정, 옛 §8 에 의존 방향 가드 추가 | 사용자 논의 — 엔티티를 영속성 기준으로 도메인과 나누면 판정 객체가 바깥 계층에 의존하게 된다. Symfony 기본 `src/Repository` 는 Doctrine 구현이라 도메인에 그대로 들일 수 없다 |
 | 2026-09-19 | §1~§5·§7 재작성 — 예약 모델을 걷어내고 실시간 점유·대기열 기준으로. 판정 객체 셋(Tag · Settlement · Extension), 거부 사유 17개(snake_case), 생성 컬럼 + 유니크로 불변식 강제, 세션 로그인, 엔드포인트 열네 개. 엔티티 정의는 `data-model.md` 로 넘김 | 사용자 인터뷰 — 전부 지금 재작성, reason 은 snake_case, 동시성은 생성 컬럼 + 유니크, 판정 객체 하나, QR 진입 시 자동 태깅하되 사용 중이면 종료 버튼 |

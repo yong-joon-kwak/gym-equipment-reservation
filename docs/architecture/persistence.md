@@ -14,6 +14,7 @@
 - 테이블 이름은 엔티티의 snake_case 단수형이다 — `member` · `equipment` · `usage_session` · `queue_entry`.
 - PK 컬럼 이름은 `<엔티티>_id` 다([`data-model.md` §3](data-model.md)).
 - 엔진 InnoDB, `utf8mb4` / `utf8mb4_unicode_ci`.
+- **관계는 `ManyToOne` 단방향**으로 매핑한다([`backend.md`](backend.md) §8 D2). `#[ORM\JoinColumn]` 의 컬럼 이름은 [`data-model.md` §3](data-model.md) 의 FK 이름(`member_id` · `equipment_id` · `ended_by_member_id` · `started_usage_session_id`)을 그대로 쓰고, FK 제약은 Doctrine 이 마이그레이션에 만든다. 1 쪽 엔티티에 `OneToMany` 컬렉션을 두지 않는다.
 
 **Symfony 기본값과 다르게 두는 곳** — 엔티티를 `Domain` 에 두기 때문이다([`backend.md`](backend.md) §1).
 
@@ -93,4 +94,5 @@ AGENTS.md §5 의 정지선이 여기 걸린다 — **AI 는 마이그레이션 
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §1 에 관계 매핑 원칙(`ManyToOne` 단방향, JoinColumn 이름은 data-model 의 FK 이름) 추가 | `backend.md` §8 D2 |
 | 2026-09-19 | `backend.md` §4.1~§4.3·§4.6 과 §8 의 생성 컬럼 매핑 항목을 옮겨 신설 | 물리 DB 설계는 스키마 변경 승인(AGENTS.md §3)의 대상이라 아키텍처 본문과 떼어 둔다. `data-model.md` 가 가리키는 "물리 매핑" 의 자리를 한 문서로 만든다 |

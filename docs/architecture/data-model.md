@@ -190,14 +190,14 @@ stateDiagram-v2
 
 ### 만료 시각을 바꾸는 방법
 
-`expires_at` 은 `UsageSession` 의 메서드로만 바뀐다. 응용 서비스가 필드를 직접 쓰지 않는다([`backend.md`](backend.md) §2.6).
+`expires_at` 은 `UsageSession` 의 사건 메서드로만 바뀐다. **값은 판정 객체가 계산해 넘기고, 메서드는 불변식만 검사한다**([`backend.md`](backend.md) §2.6 · §8 D1). 모든 메서드는 `updated_at` 을 쓰기 위해 `now` 를 받는다 — 라이프사이클 콜백을 쓰지 않기 때문이다([`persistence.md`](persistence.md) §1).
 
-| 사건 | 유스케이스 | `UsageSession` 메서드 | 결과 |
-|---|---|---|---|
-| 첫 대기 등록 | `TagEquipment` | `onWaiterArrived(now, maxMinutes, rules)` | 최대 사용시간 전이면 `started_at + 최대 사용시간`, 이미 넘겼으면 `now + 초과 중 대기` |
-| 마지막 대기가 취소 | `CancelQueueEntry` | `onWaitersGone()` | `null` |
-| 연장 | `ExtendSession` | `extend(now, rules)` | `+ 연장`, `extension_count + 1` |
-| 종료(모든 사유) | 여러 곳 | `end(reason, now, hasWaiters, rules, ?admin)` | `ended_at`·`end_reason`, 대기자가 있으면 `requeue_blocked_until` |
+| 사건 | 유스케이스 | 값을 계산하는 곳 | `UsageSession` 메서드 | 메서드가 검사하는 불변식 |
+|---|---|---|---|---|
+| 첫 대기 등록 | `TagEquipment` | `TagPolicy` — 최대 사용시간 전이면 `started_at + 최대 사용시간`, 이미 넘겼으면 `now + 초과 중 대기` | `assignExpiry(expiresAt, now)` | 진행 중이다. 만료 시각이 이미 있으면 바꾸지 않는다(첫 대기만) |
+| 마지막 대기가 취소 | `CancelQueueEntry` | — | `clearExpiry(now)` | 진행 중이다 |
+| 연장 | `ExtendSession` | `ExtensionPolicy` — 만료 시각 `+ 연장` | `extendTo(expiresAt, now)` | 진행 중이다. 아직 연장하지 않았다. 새 시각이 지금 만료 시각보다 뒤다. `extension_count + 1` |
+| 종료(모든 사유) | 여러 곳 | 종료 시각 — 만료면 `SettlementPolicy` 가 `expires_at` 을, 그 밖에는 `now`. 재대기 제한 — `QueueRules::requeueBlockedUntil(endedAt, hadWaiters)` | `end(reason, endedAt, requeueBlockedUntil, now, ?endedBy)` | 진행 중이다. `FORCE_ENDED` ⟺ `endedBy` 가 있다. `EXPIRED` 면 `endedAt = expires_at` |
 
 ---
 
@@ -260,6 +260,7 @@ stateDiagram-v2
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §5 "만료 시각을 바꾸는 방법" 을 설계 결정 D1 에 맞춤 — 계산하는 곳과 엔티티가 검사하는 불변식을 나눠 적고, 메서드 이름을 `assignExpiry` · `clearExpiry` · `extendTo` · `end(…endedAt, requeueBlockedUntil…)` 로. 모든 메서드가 `now` 를 받는다 | 사용자 논의 — 엔티티에 계산까지 두면 규칙과 불변식이 섞여 읽기·테스트가 어렵다([`backend.md`](backend.md) §8) |
 | 2026-09-19 | §5 에 "만료 시각을 바꾸는 방법" 추가(`backend.md` 옛 §2.6 에서 이관). 물리 매핑 링크를 `persistence.md` 로 | 엔티티의 상태 전이는 엔티티 설계 문서가 소유한다. 물리 매핑이 별도 문서로 분리됨 |
 | 2026-09-19 | 사용자 수정 반영 — ① 대기자가 없으면 만료·연장·알림이 없다. `expires_at` 은 대기자가 생길 때 정해지고, 최대 사용시간을 넘긴 뒤 생기면 대기 등록 + 5분 ② 관리자는 기구를 쓰지 않는 `member_type = ADMIN` 회원 ③ `had_waiters_at_end` 대신 `requeue_blocked_until`(재대기 제한이 풀리는 시각) | 사용자 결정 |
 | 2026-09-19 | 사용자 수정 반영 — ① PK 를 `<엔티티>_id` 로, 역할 FK 는 `ended_by_member_id`·`started_usage_session_id` ② 모든 엔티티에 `dbstatus`(`'A'` Alive / `'D'` Deleted) 소프트 삭제 ③ 시각은 UTC 대신 서울 시간 | 사용자 결정 |

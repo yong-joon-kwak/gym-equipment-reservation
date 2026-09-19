@@ -122,9 +122,9 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구�
 | 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1 · [`apps/backend/README.md`](../apps/backend/README.md)) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
 | 2-2 | **기능 정의** (문서만) — `features/equipment-queue/README.md` 신설, `features/equipment-catalog/README.md` 정정. 여러 칸에 걸치는 설계 결정(도메인의 UUID 생성 의존, 2-4~2-7 에서 엔티티를 어디까지 만드는가)을 [`backend.md`](architecture/backend.md) 에 반영 | 두 기능 문서의 최소 보장과 티어가 정해지고 개발자가 확인했다 |
 | 2-3 | **T4 가드** — `#[Feature]` 어트리뷰트(`tests/Support/Feature.php`) + `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 테스트 0건으로 초록. 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
-| 2-4 | **도메인 기반** — 규칙 값·enum·값 객체, 엔티티 넷(ORM 어트리뷰트 없이). 대상 보장: `UsageSession` 의 만료 시각 전이([`data-model.md`](architecture/data-model.md) §5) | 해당 보장의 T1 초록 |
+| 2-4 | **도메인 기반** — 규칙 값·enum·값 객체, 엔티티 셋(`Member`·`Equipment`·`UsageSession`, ORM 어트리뷰트 없이). `QueueEntry` 는 첫 사용처인 2-6 에서. 대상 보장: `UsageSession` 의 만료 시각 전이([`data-model.md`](architecture/data-model.md) §5) | 해당 보장의 T1 초록 |
 | 2-5 | **`ExtensionPolicy`** — 연장 판정 | 연장 보장의 T1 초록 |
-| 2-6 | **`TagPolicy`** — 태깅 판정 | [`system-overview.md`](architecture/system-overview.md) §2.1 흐름도의 분기마다 T1 초록 |
+| 2-6 | **`TagPolicy`** — 태깅 판정, 그리고 대기 등록에 쓰는 `QueueEntry` | [`system-overview.md`](architecture/system-overview.md) §2.1 흐름도의 분기마다 T1 초록 |
 | 2-7 | **`SettlementPolicy`** — 지연 정리, 그리고 순번·예상 대기 시간 계산 | 호출·노쇼·멱등 T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 4 | 영속화 + **T2·T3** — 매핑·유니크 제약, 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
 | 5-1 | **인증** — 세션 기반 로그인(`json_login`), 시드 회원·관리자, 역할 구분 | 로그인 후 현재 회원을 돌려주는 엔드포인트가 T3 로 초록 |
@@ -217,5 +217,6 @@ Symfony Controller + DTO
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | 2-4 의 엔티티를 셋으로, `QueueEntry` 는 2-6 으로 | [`plans/2-4-domain-foundation.md`](plans/2-4-domain-foundation.md) D1 — 행동도 테스트도 없는 코드가 두 칸 동안 놓이지 않게 |
 | 2026-09-19 | CI 의 push·PR 트리거를 끄고 수동 실행만 둠. 9단계에서 복원 | 대상이 없는 잡(frontend·contract)이 push 마다 실패했다 |
 | 2026-09-19 | 옛 2-2(도메인 T1)를 2-2 기능 정의 · 2-3 T4 가드(옛 3단계) · 2-4~2-7 판정 객체별 구현으로 나눔. 구현 칸 안의 순서(계획 → 확인 → 구현)를 추가 | 2-2 를 진행하다 막힘 — 기능 문서(`equipment-queue`)가 없어 무엇을 테스트할지 근거가 없었고, 정의·설계·구현이 한 칸에 있었다 |

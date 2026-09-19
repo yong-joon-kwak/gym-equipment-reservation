@@ -1,8 +1,8 @@
 # AGENTS.md
 
-(운동기구 예약 데모 — AI 개발 정책 Single Source of Truth)
+(운동기구 실시간 점유·대기 시스템 — AI 개발 정책 Single Source of Truth)
 
-- Version: 1.1.0
+- Version: 1.2.0
 - Last Updated: 2026-09-19
 
 ---
@@ -28,7 +28,8 @@
 
 - 함께 바뀌는 것(API + 그 API 를 쓰는 화면)은 **한 커밋**으로 바꾼다.
 - 프론트에 백엔드 규칙(예: 그리드·한도·활성 여부 판정)을 복제하지 않는다. 판정의 소유자는 백엔드다.
-- **기능 슬러그가 문서와 코드를 잇는 좌표다.** `docs/features/<슬러그>/` = 백엔드 `#[Feature('<슬러그>')]` = 프론트 `src/features/<슬러그>/`. 현재 슬러그: `equipment-reservation` · `equipment-catalog`. 규칙은 `docs/README.md`.
+- **기능 슬러그가 문서와 코드를 잇는 좌표다.** `docs/features/<슬러그>/` = 백엔드 `#[Feature('<슬러그>')]` = 프론트 `src/features/<슬러그>/`. 현재 슬러그: `equipment-queue` · `equipment-catalog`. 규칙은 `docs/README.md`.
+- **제품 범위의 정본은 루트 `README.md` 다.** 무엇을 만들고 무엇을 하지 않는지는 거기서 정한다. 로그인(세션 인증)은 범위 안이고, 결제·푸시 알림·회원 관리는 범위 밖이다.
 - **배포층은 이 저장소의 범위 밖이다.** 검증(lefthook·CI)까지만 둔다. 근거와 재검토 시점은 `docs/BUILD-PLAN.md` §7.
 
 ---
@@ -74,12 +75,13 @@
 
 ## 6. 정책 상세 문서
 
+- 제품 범위: `README.md` (루트)
 - 문서 지도·상태 규칙: `docs/README.md`
 - 구축 계획(순서·목표 트리·한계): `docs/BUILD-PLAN.md`
 - 모노레포 구조 고찰: `docs/architecture/monorepo.md`
 - API 계약(OpenAPI → TS): `docs/architecture/api-contract.md`
 - 테스트를 명세로 쓰는 구조: `docs/coding/test-as-specification.md`
-- 기능 문서: `docs/features/equipment-reservation/README.md` · `docs/features/equipment-catalog/README.md`
+- 기능 문서: `docs/features/equipment-queue/README.md`(작성 예정) · `docs/features/equipment-catalog/README.md`
 
 ---
 
@@ -92,4 +94,5 @@
 | 버전 | 날짜 | 변경 | 근거 |
 |---|---|---|---|
 | 1.0.0 | 2026-09-18 | 모노레포 전환에 맞춘 초기 정책 수립 — apps/packages 경계, 계약 재생성 규칙, 테스트=명세(백+프론트) | 단일 Symfony 데모를 apps/backend + apps/frontend + packages/api-client 로 진화시키며, "판정의 소유자는 백엔드"와 "생성물 수기 수정 금지"를 명시할 필요가 있었다 |
+| 1.2.0 | 2026-09-19 | 제품 재정의 반영 — ① 시간 슬롯 예약에서 **실시간 점유·대기열**로 바뀌었다(정본: 루트 `README.md`) ② 기능 슬러그 `equipment-reservation` → `equipment-queue` ③ 로그인(세션 인증)이 범위 안으로 들어왔다 | 무엇을 만드는지가 바뀌었는데 슬러그·범위가 옛 제품을 가리키고 있었다. 슬러그는 문서·테스트 라벨·프론트 폴더를 잇는 좌표라, 틀린 채로 두면 가드가 엉뚱한 것을 검사한다 |
 | 1.1.0 | 2026-09-19 | 문서 정합성 정리 — ① 전환 계획을 구축 계획(`docs/BUILD-PLAN.md`)으로 대체 ② `docs/README.md` 신설(문서 상태·SSOT 배치) ③ 테스트 티어를 T1~T4 로 확장하고 T2 의 선을 규정 ④ 기능 슬러그를 둘로(+`equipment-catalog`) ⑤ 배포층을 범위 밖으로 명시 | 저장소를 비우고 다시 시작하면서 문서가 존재하지 않는 코드를 가리키고 있었다(기능 문서가 `done`, 계획 문서가 "옮긴다"). 또한 한계·가드 설정이 여러 문서에 복제되어 §1 의 중복 금지 원칙을 문서 세트 스스로 어기고 있었다 |

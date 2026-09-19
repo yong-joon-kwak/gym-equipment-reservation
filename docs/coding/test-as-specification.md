@@ -20,7 +20,7 @@
 
 | 티어 | `#[Group]` | 대상 | 대역(代役) | DB |
 |---|---|---|---|---|
-| **T1 규칙** | `unit` | 판정·상태 전이 (`ReservationPolicy`, `Reservation`) | 없음 | 불필요 |
+| **T1 규칙** | `unit` | 판정과 값 객체 — 연장 허용 여부, 노쇼 판정, 순번 계산 | 없음 | 불필요 |
 | **T2 협력** | `collaboration` | 응용 서비스가 도메인·저장소를 엮는 흐름 | **경계 어댑터만 가짜(fake)** | 불필요 |
 | **T3 통합** | `integration` | 실제 DB 에서 흐름·동시성·제약 | 없음 (실 DB) | MariaDB |
 | **T4 구조** | `structure` | 리플렉션 불변식 · 라벨 가드 | 없음 | 불필요 |
@@ -35,17 +35,17 @@
 |---|---|
 | 리포지토리·시계(Clock) 같은 **경계**를 인메모리 가짜 구현으로 대체 | 같은 계층의 협력자를 목으로 대체 |
 | **반환값**과 **가짜 저장소에 남은 상태**로 단언 | `expects($this->once())` 등 **호출 횟수·순서** 단언 |
-| 흐름의 결과(예약이 HELD 로 남았다) | 흐름의 절차(A 를 부르고 B 를 불렀다) |
+| 흐름의 결과(대기열에 한 사람이 남았다) | 흐름의 절차(A 를 부르고 B 를 불렀다) |
 
 > 판단 기준 한 줄: **서비스의 내부 구조를 바꿨을 때 T2 가 깨지면 그 테스트는 잘못 쓴 것이다.** 깨져야 하는 것은 보장이 바뀌었을 때뿐이다.
 
 ### 연결 어트리뷰트
 
 ```php
-#[Feature('equipment-reservation')]    // 기능 좌표 (커스텀, FeatureCoverageTest 가 검증)
-#[Group('unit')]                        // 티어 (PHPUnit 기본)
-#[TestDox('지난 시간은 예약할 수 없다')] // 한국어 보장 문장 (사람이 읽는 명세)
-public function testRejectsPastSlot(): void
+#[Feature('equipment-queue')]          // 기능 좌표 (커스텀, FeatureCoverageTest 가 검증)
+#[Group('unit')]                       // 티어 (PHPUnit 기본)
+#[TestDox('대기자가 있으면 연장은 한 번까지다')] // 한국어 보장 문장 (사람이 읽는 명세)
+public function testLimitsExtensionWhenSomeoneIsWaiting(): void
 ```
 
 ### 가드 — `tests/Architecture/FeatureCoverageTest.php` (T4)
@@ -58,7 +58,7 @@ public function testRejectsPastSlot(): void
 | **커버리지 하한** | `status: done`·`in-progress` 인 기능마다 T3 통합 테스트가 최소 1개 있는가 | 문서만 done 이고 흐름 검증이 없는 기능 |
 | **라벨 누락** | `#[Feature]` 없는 테스트 클래스가 없는가 (화이트리스트 예외만 허용) | 좌표 없이 떠도는 테스트 |
 
-커버리지 하한 검사가 의미를 가지려면 기능이 둘 이상이어야 한다. 이 저장소가 `equipment-reservation` 과 `equipment-catalog` 를 두는 이유 중 하나다.
+커버리지 하한 검사가 의미를 가지려면 기능이 둘 이상이어야 한다. 이 저장소가 `equipment-queue` 와 `equipment-catalog` 를 두는 이유 중 하나다.
 
 ---
 
@@ -70,7 +70,7 @@ public function testRejectsPastSlot(): void
 
 | 백엔드 | 프론트 |
 |---|---|
-| `#[Feature('equipment-reservation')]` | `src/features/equipment-reservation/` 폴더 + `describe('... [equipment-reservation]')` |
+| `#[Feature('equipment-queue')]` | `src/features/equipment-queue/` 폴더 + `describe('... [equipment-queue]')` |
 | `#[Group('unit')]` 등 티어 | 파일 위치 (`*.store.spec.ts` / `*.vue.spec.ts`) |
 | `#[TestDox('...')]` | `it('...')` 문장 |
 
@@ -79,13 +79,13 @@ public function testRejectsPastSlot(): void
 - API 는 가짜로 대체하되 **거부 사유 형태(`{error, reason}`)까지 계약대로** 흉내 낸다. 호출 횟수는 단언하지 않는다 — 2절의 T2 규칙과 같은 선이다.
 
 ```ts
-// src/features/equipment-reservation/reservation.store.spec.ts
-describe('예약 스토어 [equipment-reservation]', () => {
-  it('서버가 EquipmentTaken 으로 거부하면 그 사유를 그대로 노출한다', async () => {
-    const api = fakeApi({ hold: reject(409, { error: '...', reason: 'equipment_taken' }) })
-    const store = useReservationStore(api)
-    await store.hold(slot)
-    expect(store.lastRejection?.reason).toBe('equipment_taken') // 계약을 지켰는가
+// src/features/equipment-queue/queue.store.spec.ts
+describe('대기열 스토어 [equipment-queue]', () => {
+  it('서버가 EquipmentInactive 로 거부하면 그 사유를 그대로 노출한다', async () => {
+    const api = fakeApi({ tag: reject(422, { error: '...', reason: 'equipment_inactive' }) })
+    const store = useQueueStore(api)
+    await store.tag('TM-01')
+    expect(store.lastRejection?.reason).toBe('equipment_inactive') // 계약을 지켰는가
   })
 })
 ```

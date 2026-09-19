@@ -1,0 +1,16 @@
+# --- PHP (apps/backend) ---
+apps/backend/vendor/
+apps/backend/var/
+apps/backend/.env
+apps/backend/.env.local
+.phpunit.result.cache
+.phpunit.cache/
+
+# --- JS (루트 workspaces · apps/frontend · packages/*) ---
+node_modules/
+apps/frontend/dist/
+coverage/
+
+# 생성물이지만 커밋 대상이다 — 무시하지 않는다 (AGENTS.md §5):
+#   apps/backend/openapi/openapi.json
+#   packages/api-client/src/generated.ts

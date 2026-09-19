@@ -1,0 +1,95 @@
+# AGENTS.md
+
+(운동기구 예약 데모 — AI 개발 정책 Single Source of Truth)
+
+- Version: 1.1.0
+- Last Updated: 2026-09-19
+
+---
+
+## 1. 기본 원칙
+
+1. 본 파일은 이 저장소에서 AI 도구가 따를 정책의 기준 문서다.
+2. 정책은 다른 파일에 중복 작성하지 않는다. 상세는 `docs/**` 로 링크한다.
+3. `CLAUDE.md` 는 "AGENTS.md 를 따르라" 만 적은 최소 어댑터로 유지한다.
+4. 구조적 변경(아키텍처·DB·Breaking change)은 사유·영향 범위·롤백 계획을 남기고, 변경한 개발자가 책임진다.
+
+---
+
+## 2. 모노레포 경계 — 무엇을 어디에 두는가
+
+이 저장소는 `apps`(실행 단위)와 `packages`(앱 사이의 공유물)로 나뉜다.
+
+| 위치 | 무엇 | 규칙 |
+|---|---|---|
+| `apps/backend` | Symfony 7.4 API | 도메인 규칙·판정은 여기(순수 도메인)에만 둔다 |
+| `apps/frontend` | Vue 3 + Vite + TS | **규칙을 다시 구현하지 않는다.** 계약(타입·거부 사유)만 반영한다 |
+| `packages/api-client` | OpenAPI → 생성된 TS | **생성물이다. 수기로 고치지 않는다.** 스펙을 바꾸고 재생성한다 |
+
+- 함께 바뀌는 것(API + 그 API 를 쓰는 화면)은 **한 커밋**으로 바꾼다.
+- 프론트에 백엔드 규칙(예: 그리드·한도·활성 여부 판정)을 복제하지 않는다. 판정의 소유자는 백엔드다.
+- **기능 슬러그가 문서와 코드를 잇는 좌표다.** `docs/features/<슬러그>/` = 백엔드 `#[Feature('<슬러그>')]` = 프론트 `src/features/<슬러그>/`. 현재 슬러그: `equipment-reservation` · `equipment-catalog`. 규칙은 `docs/README.md`.
+- **배포층은 이 저장소의 범위 밖이다.** 검증(lefthook·CI)까지만 둔다. 근거와 재검토 시점은 `docs/BUILD-PLAN.md` §7.
+
+---
+
+## 3. Agent 권한 범위
+
+### ✅ 허용
+
+- 소규모 기능 구현(백/프론트)
+- 테스트 코드 추가·수정, **보장이 사라진 테스트의 개별 삭제**
+- 기존 규칙을 따르는 범위 내 리팩터링
+- 문서 보완, OpenAPI 스펙 재생성(`npm run api:sync`)
+
+### ⚠ 개발자 책임(사람이 결정)
+
+- Breaking change(HTTP 계약·도메인 불변식 변경)
+- DB schema migration
+- 인증/보안 구조 변경
+- 대규모 리팩터(다수 모듈 영향), 테스트 일괄 삭제·티어 재배치
+- `packages/api-client/src/generated.ts` 를 손으로 수정하는 일(=금지, 스펙을 고쳐 재생성)
+
+---
+
+## 4. 코드 작성 원칙
+
+- **작은 diff(Small Diff)** 를 우선한다.
+- **기능 변경 시 "바뀐 보장"을 테스트로 표현한다.** 기준은 "테스트를 추가했는가"가 아니라 "무엇이 새로 보장되고 무엇이 더 이상 보장되지 않는가"다. 보장이 늘지 않는 변경에 테스트를 늘리지 않고, 사라진 보장의 테스트는 지운다. 판정 규칙은 목(mock) 없이 검증하며, **호출 횟수(`expects`)는 계약이 아니므로 단언하지 않는다.** 상세: `docs/coding/test-as-specification.md`.
+- **프론트는 계약을 반영하되 규칙을 판단하지 않는다.** 서버 거부 사유(reason)를 그대로 노출하고, 자체 판정을 두지 않는다. 상세: `docs/architecture/api-contract.md`.
+- 코드 주석의 기본값은 **쓰지 않는 것**이다. 설명이 필요하면 먼저 이름과 구조를 고친다. 코드만으로 알 수 없는 것(업무 규칙의 근거·버린 선택지·순서 의존)만 주석으로 남기고, 배경은 `docs/**` 에 쓴다.
+- **테스트 티어는 T1 규칙(`unit`) · T2 협력(`collaboration`) · T3 통합(`integration`) · T4 구조(`structure`) 넷이다.** T2 는 리포지토리·시계 같은 **경계만 가짜(fake) 구현으로 대체**하고 **결과로 단언**한다. 같은 계층의 협력자를 목으로 세우거나 호출 절차를 단언하면 테스트가 구현을 복사하게 되고, 서비스를 고칠 때마다 짝 테스트가 같이 고쳐진다 — 그것이 이 규칙이 생긴 이유다.
+- 기존 코드 스타일·컨벤션을 준수한다.
+
+---
+
+## 5. AI 가 멈추는 곳(정지선)
+
+- **DB 마이그레이션**: 새 파일 생성과 검토까지만. 실제 적용은 개발자.
+- **계약 변경**: OpenAPI 스펙을 바꾸면 반드시 재생성(`npm run api:sync`)하고, 생성물을 커밋한다. 생성물을 손으로 고치지 않는다.
+- **문서 상태**: `blocked`(결정 대기 — 임의 구현 금지) · `superseded`(폐기 — 구현 근거로 쓰지 않음). 전체 상태 값과 `done` 의 조건은 `docs/README.md` §2.
+- **구현이 없는 기능 문서에 `status: done` 을 적지 않는다.** 상태는 사람이 읽는 라벨이 아니라 가드(`FeatureCoverageTest`)가 읽는 값이다.
+
+---
+
+## 6. 정책 상세 문서
+
+- 문서 지도·상태 규칙: `docs/README.md`
+- 구축 계획(순서·목표 트리·한계): `docs/BUILD-PLAN.md`
+- 모노레포 구조 고찰: `docs/architecture/monorepo.md`
+- API 계약(OpenAPI → TS): `docs/architecture/api-contract.md`
+- 테스트를 명세로 쓰는 구조: `docs/coding/test-as-specification.md`
+- 기능 문서: `docs/features/equipment-reservation/README.md` · `docs/features/equipment-catalog/README.md`
+
+---
+
+## 7. 변경 통제
+
+- 정책 변경은 변경 이력과 근거를 아래에 기록하고 Version/Last Updated 를 갱신한다.
+
+## 8. 변경 이력
+
+| 버전 | 날짜 | 변경 | 근거 |
+|---|---|---|---|
+| 1.0.0 | 2026-09-18 | 모노레포 전환에 맞춘 초기 정책 수립 — apps/packages 경계, 계약 재생성 규칙, 테스트=명세(백+프론트) | 단일 Symfony 데모를 apps/backend + apps/frontend + packages/api-client 로 진화시키며, "판정의 소유자는 백엔드"와 "생성물 수기 수정 금지"를 명시할 필요가 있었다 |
+| 1.1.0 | 2026-09-19 | 문서 정합성 정리 — ① 전환 계획을 구축 계획(`docs/BUILD-PLAN.md`)으로 대체 ② `docs/README.md` 신설(문서 상태·SSOT 배치) ③ 테스트 티어를 T1~T4 로 확장하고 T2 의 선을 규정 ④ 기능 슬러그를 둘로(+`equipment-catalog`) ⑤ 배포층을 범위 밖으로 명시 | 저장소를 비우고 다시 시작하면서 문서가 존재하지 않는 코드를 가리키고 있었다(기능 문서가 `done`, 계획 문서가 "옮긴다"). 또한 한계·가드 설정이 여러 문서에 복제되어 §1 의 중복 금지 원칙을 문서 세트 스스로 어기고 있었다 |

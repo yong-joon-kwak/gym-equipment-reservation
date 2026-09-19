@@ -62,6 +62,7 @@ gym-equipment-reservation/
     ├── BUILD-PLAN.md             # 이 문서
     ├── architecture/monorepo.md
     ├── architecture/api-contract.md
+    ├── architecture/backend.md
     ├── coding/test-as-specification.md
     └── features/
         ├── equipment-reservation/README.md
@@ -109,7 +110,7 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 | 단계 | 할 일 | 완료 조건 |
 |---|---|---|
 | 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.env.dist` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
-| 2 | `apps/backend` 골격 + **도메인 T1** — Symfony 7.4 skeleton, 순수 도메인(`Reservation`·`Equipment`·`ReservationPolicy`)과 목 없는 규칙 테스트 | `composer -d apps/backend test` · `stan`(max) 초록 |
+| 2 | `apps/backend` 골격 + **도메인 T1** — [`architecture/backend.md`](architecture/backend.md) 대로 Symfony 7.4 skeleton, 순수 도메인(`Reservation`·`Equipment`·`ReservationPolicy`)과 목 없는 규칙 테스트 | `composer -d apps/backend test` · `stan`(max) 초록 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
 | 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
 | 5 | HTTP + **OpenAPI** — 컨트롤러·요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` | `apps/backend/openapi/openapi.json` 생성됨 |

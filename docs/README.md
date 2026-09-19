@@ -14,6 +14,7 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 | 개발 정책·AI 권한 경계·정지선 | [`AGENTS.md`](../AGENTS.md) | 링크 |
 | 왜 모노레포인가 · apps/packages 경계의 근거 | [`architecture/monorepo.md`](architecture/monorepo.md) | 링크 |
 | OpenAPI → TS 계약 생성 경로·도구 선택 | [`architecture/api-contract.md`](architecture/api-contract.md) | 링크 |
+| 백엔드 계층·도메인 파라미터·거부 사유·스키마 | [`architecture/backend.md`](architecture/backend.md) | 링크 |
 | 테스트 티어(T1~T4)·라벨 규약·가드의 정의 | [`coding/test-as-specification.md`](coding/test-as-specification.md) | 링크 |
 | 기능의 범위와 **최소 보장** | `features/<슬러그>/README.md` | 링크 |
 | 무엇을 어떤 순서로 만드는가 | [`BUILD-PLAN.md`](BUILD-PLAN.md) | 링크 |

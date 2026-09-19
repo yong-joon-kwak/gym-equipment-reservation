@@ -110,14 +110,17 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 | 단계 | 할 일 | 완료 조건 |
 |---|---|---|
 | 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.env.dist` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
-| 2 | `apps/backend` 골격 + **도메인 T1** — [`architecture/backend.md`](architecture/backend.md) 대로 Symfony 7.4 skeleton, 순수 도메인(`Reservation`·`Equipment`·`ReservationPolicy`)과 목 없는 규칙 테스트 | `composer -d apps/backend test` · `stan`(max) 초록 |
+| 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
+| 2-2 | **도메인 T1** — 값 객체·엔티티·`ReservationPolicy` 와 목 없는 규칙 테스트 ([`backend.md`](architecture/backend.md) §2·§3) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
-| 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
-| 5 | HTTP + **OpenAPI** — 컨트롤러·요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` | `apps/backend/openapi/openapi.json` 생성됨 |
+| 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) ([`backend.md`](architecture/backend.md) §4) | 전체 스위트 초록 (로컬 MariaDB 필요) |
+| 5 | HTTP + **OpenAPI** — 컨트롤러·요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` ([`backend.md`](architecture/backend.md) §5) | `apps/backend/openapi/openapi.json` 생성됨 |
 | 6 | `packages/api-client` — `openapi-typescript` 로 `src/generated.ts`, 얇은 `index.ts`(ky 인터셉터·거부 사유 에러 타입) | `npm -w packages/api-client run build` 통과 |
 | 7 | `apps/frontend` — Vue 3 + Vite + TS. 예약 화면과 기구 목록. `@gym/api-client` 만 의존 | `vue-tsc --noEmit` + `vite build` 통과 |
 | 8 | **프론트 Vitest** — 4절의 계약 보장 | `vitest run` 초록 |
 | 9 | CI 3잡 완성 — `backend` · `frontend` · **`contract`**(drift 검사) | 스펙을 바꾸고 `api:sync` 를 빼먹으면 CI 가 **실패**함을 확인 |
+
+2단계를 둘로 나눈 이유: **골격과 도메인은 성격이 다르다.** 2-1 은 도구 배선이라 도메인을 몰라도 끝나고, 2-2 는 도구를 다시 건드리지 않는다. 한 칸에 두면 설계 논의가 골격 작업을 붙잡는다.
 
 소급하지 않는다: 1~5 단계까지는 프론트가 없어도 백엔드가 그대로 돌아야 한다.
 

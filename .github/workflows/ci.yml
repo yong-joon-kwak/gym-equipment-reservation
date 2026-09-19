@@ -2,10 +2,13 @@
 # 각 잡은 해당 단계(2~9)가 끝나면서 차례로 초록이 된다.
 name: CI
 
+# 임시: 자동 트리거를 끄고 수동 실행만 둔다(2026-09-19). frontend·contract 잡의
+# 대상이 아직 없어 push 마다 실패한다. 9단계(CI 3잡 완성)에서 아래 주석을 되살린다.
 on:
-  push:
-    branches: [master]
-  pull_request:
+  workflow_dispatch:
+  # push:
+  #   branches: [master]
+  # pull_request:
 
 jobs:
   backend:

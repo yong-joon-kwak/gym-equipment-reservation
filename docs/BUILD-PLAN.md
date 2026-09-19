@@ -132,7 +132,7 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구�
 | 6 | `packages/api-client` — `openapi-typescript` 로 `src/generated.ts`, 얇은 `index.ts`(ky 인터셉터·거부 사유 에러 타입) | `npm -w packages/api-client run build` 통과 |
 | 7 | `apps/frontend` — Vue 3 + Vite + TS. 현황 목록·기구 상세·관리자 세 화면(+ 로그인 폼). `@gym/api-client` 만 의존 | `vue-tsc --noEmit` + `vite build` 통과 |
 | 8 | **프론트 Vitest** — 4절의 계약 보장 | `vitest run` 초록 |
-| 9 | CI 3잡 완성 — `backend` · `frontend` · **`contract`**(drift 검사) | 스펙을 바꾸고 `api:sync` 를 빼먹으면 CI 가 **실패**함을 확인 |
+| 9 | CI 3잡 완성 — `backend` · `frontend` · **`contract`**(drift 검사), push·PR 트리거 복원(§6) | 스펙을 바꾸고 `api:sync` 를 빼먹으면 CI 가 **실패**함을 확인 |
 
 2단계와 5단계를 나눈 이유는 같다: **배선과 설계는 성격이 다르다.** 2-1(골격)·5-1(인증)은 도구를 까는 일이라 업무 규칙을 몰라도 끝나고, 그 뒤 칸들은 그 도구를 다시 건드리지 않는다. 한 칸에 두면 설계 논의가 배선 작업을 붙잡는다.
 
@@ -194,6 +194,8 @@ Symfony Controller + DTO
 | CI `frontend` | `vue-tsc` → `vitest run` → `vite build` | 백과 병렬 |
 | CI `contract` | `npm run api:sync` 후 `git diff --exit-code` | 수동 재생성 누락을 실패로 드러낸다 |
 
+> **지금 CI 는 수동 실행(`workflow_dispatch`)만 둔다.** `frontend`·`contract` 잡의 대상이 7·5단계 전에는 없어 push 마다 실패하기 때문이다. 그동안의 검증은 lefthook(pre-commit·pre-push)이 맡는다. push·PR 트리거는 9단계에서 되살린다.
+
 ---
 
 ## 7. 한계 (이 저장소의 한계 **정본**)
@@ -215,4 +217,5 @@ Symfony Controller + DTO
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | CI 의 push·PR 트리거를 끄고 수동 실행만 둠. 9단계에서 복원 | 대상이 없는 잡(frontend·contract)이 push 마다 실패했다 |
 | 2026-09-19 | 옛 2-2(도메인 T1)를 2-2 기능 정의 · 2-3 T4 가드(옛 3단계) · 2-4~2-7 판정 객체별 구현으로 나눔. 구현 칸 안의 순서(계획 → 확인 → 구현)를 추가 | 2-2 를 진행하다 막힘 — 기능 문서(`equipment-queue`)가 없어 무엇을 테스트할지 근거가 없었고, 정의·설계·구현이 한 칸에 있었다 |

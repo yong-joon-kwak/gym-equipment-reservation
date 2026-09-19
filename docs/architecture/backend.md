@@ -192,6 +192,8 @@ past_slot → off_grid → outside_booking_window → equipment_inactive
 
 ### 4.1 테이블
 
+> **엔티티 설계의 정본은 [`data-model.md`](data-model.md) 로 옮겼다.** 아래 표는 옛 예약 모델이며, 이 절은 물리 매핑(타입·인덱스·불변식을 DB 로 강제하는 방법)만 남기도록 재작성할 예정이다.
+
 ```text
 equipment
   id                BINARY(16)  PK          -- UUIDv7
@@ -258,8 +260,8 @@ AGENTS.md §5 의 정지선이 여기 걸린다 — **AI 는 마이그레이션 
 
 ### 4.5 시간대
 
-- 저장·판정은 **UTC**. `DateTimeImmutable` 만 쓰고 가변 `DateTime` 은 도메인에 들이지 않는다.
-- 표시는 프론트가 KST 로 한다. 슬롯 경계는 정시이고 KST 오프셋이 `+09:00` 정각이라 그리드 판정은 두 시간대에서 같다.
+- 저장·판정·표시 모두 **서울 시간(`Asia/Seoul`)** 이다. 근거는 [`data-model.md`](data-model.md) §5·§7. 앱(PHP `date.timezone`)과 DB 세션 시간대(`time_zone = '+09:00'`)를 같은 값으로 맞춘다.
+- `DateTimeImmutable` 만 쓰고 가변 `DateTime` 은 도메인에 들이지 않는다.
 - 현재 시각은 **`Psr\Clock\ClockInterface`** 로만 얻는다. `new DateTimeImmutable()` 을 도메인·응용에서 직접 부르지 않는다. T1·T2 는 `symfony/clock` 의 `MockClock` 으로 시간을 고정한다 — 이것이 "과거 시각 거부" 와 "홀드 만료" 를 결정적으로 시험할 수 있게 하는 유일한 장치다.
 
 ---
@@ -385,4 +387,3 @@ apps/backend/tests/
 | 만료 스케줄러·워커 | 배포층이 필요해진다([`BUILD-PLAN.md` §7](../BUILD-PLAN.md)) |
 | 캐시·큐·이벤트 버스 | 기구 두 종·엔드포인트 아홉 개에 필요하지 않다 |
 | 다국어 메시지 | `message` 는 한국어 고정. `reason` 이 계약이므로 번역은 프론트 몫 |
-| 소프트 삭제 일반화 | 기구 비활성화 하나뿐. 공통 장치로 추상화하지 않는다 |

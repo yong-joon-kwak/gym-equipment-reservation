@@ -19,7 +19,7 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 | 테스트 티어(T1~T4)·라벨 규약·가드의 정의 | [`coding/test-as-specification.md`](coding/test-as-specification.md) | 링크 |
 | 기능의 범위와 **최소 보장** | `features/<슬러그>/README.md` | 링크 |
 | 비즈니스 흐름·시스템 경계·레이어(그림) | `architecture/system-overview.md` | 링크. 만들어진 뒤의 사실은 코드가 정본 |
-| 엔티티 설계(논리 ERD·관계·식별자/상태/감사 필드 정책) | `architecture/data-model.md` — 현재 `backend.md` §4 에서 이관 예정 | 링크 |
+| 엔티티 설계(논리 ERD·관계·식별자/상태/감사 필드 정책) | [`architecture/data-model.md`](architecture/data-model.md) | 링크. 물리 매핑은 `backend.md` §4 |
 | 도메인 용어의 정의 | `business/domain-glossary.md` | 링크. 용어를 바꾸면 쓰는 곳을 같은 커밋에서 |
 | BUILD-PLAN 한 단계의 세부 순서 | `plans/<단계>-<이름>.md` | 링크 |
 | 설계 문서의 산출물·골격·다이어그램 규약·화면 문구 규칙 | [`ai-agent/README.md`](ai-agent/README.md) | 링크 |

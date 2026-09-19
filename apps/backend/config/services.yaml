@@ -18,6 +18,10 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        # 도메인에는 아직 서비스로 쓸 것이 없다. 판정 객체를 서비스로 쓰는 4단계에서 좁힌다
+        # (docs/plans/2-4-domain-foundation.md D3, docs/architecture/persistence.md §1).
+        exclude:
+            - '../src/Domain/'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

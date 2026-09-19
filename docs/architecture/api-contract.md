@@ -11,7 +11,7 @@
 apps/backend  Symfony Controller + Request/Response DTO
   └─ nelmio/api-doc-bundle                 → apps/backend/openapi/openapi.json
       │  #[OA\Response(content: new Model(type: XxxDto::class))]
-      │  npm -w apps/backend run api:spec   (내부: bin/console nelmio:apidoc:dump)
+      │  npm run api:spec                (내부: bin/console nelmio:apidoc:dump)
       └─ openapi-typescript                → packages/api-client/src/generated.ts
           │  npm -w packages/api-client run generate
           └─ apps/frontend 는 @gym/api-client 만 import (수기 타입 없음)
@@ -71,7 +71,7 @@ git diff --exit-code    # 생성물이 달라졌으면 = 재생성을 빼먹은 
 
 생성물을 커밋 대상으로 두는 이유가 여기서 드러난다. **커밋된 생성물이 있어야 "다시 만들었더니 달라졌다" 를 diff 로 물을 수 있다.**
 
-- 대가: CI 가 한 겹 무거워지고, 백엔드 컨테이너를 CI 에서 한 번 더 기동해야 한다.
+- 대가: CI 가 한 겹 무거워지고, 백엔드를 CI 에서 한 번 더 기동해야 한다.
 - 이 잡이 보장하는 것은 "스펙과 타입이 일치한다" 까지다. **스펙이 실제 응답과 일치하는지는 보장하지 않는다** — 그건 백엔드의 통합 테스트(T3)가 보는 것이다.
 
 ---

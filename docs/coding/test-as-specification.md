@@ -25,6 +25,21 @@
 | **T3 통합** | `integration` | 실제 DB 에서 흐름·동시성·제약 | 없음 (실 DB) | MariaDB |
 | **T4 구조** | `structure` | 리플렉션 불변식 · 라벨 가드 | 없음 | 불필요 |
 
+### 계층과 티어
+
+백엔드의 계층([`backend.md`](../architecture/backend.md) §1)마다 제 티어가 있다.
+
+| 계층 | 여기서 묻는 것 | 티어 | 대역 |
+|---|---|---|---|
+| `Domain` — 판정 객체 셋 · 엔티티 | 판정과 상태 전이가 옳은가 | T1 | 없음 |
+| `Application` — 유스케이스 | 도메인과 저장소를 엮은 **흐름의 결과**가 옳은가 | T2 | 경계만 가짜(fake) |
+| `Infrastructure` · `Ui/Http` | 실제 DB·HTTP 에서 흐름·제약·동시성이 성립하는가 | T3 | 없음 (실 DB) |
+| 전체 | 좌표·라벨·의존 방향이 지켜지는가 | T4 | 없음 |
+
+"목 없이 검증한다" 는 **T1 에 붙은 조건이지 백엔드 전체에 붙은 조건이 아니다.** 유스케이스는 T2 로 검증하고, 거기서는 인메모리 가짜 저장소와 고정 시계를 쓴다. 금지된 것은 **T2 가 결과 대신 호출 절차를 단언하는 것** 하나다(아래).
+
+이 대응을 지키는 것이 의존 방향이다. 규칙 객체가 Doctrine 을 부르면 규칙 테스트가 DB 를 끌고 오고, **T1 이 사실상 T3 가 된다.** 저장소 인터페이스를 `Domain` 에 두고 구현을 `Infrastructure` 에 두는 이유도 같다 — T2 의 인메모리 가짜는 그 인터페이스를 구현한 것이지 목이 아니다.
+
 ### T2 를 다시 들이면서 그은 선
 
 이 저장소의 출발점이 된 문제가 바로 T2 였다 — "기능 변경 시 반드시 테스트를 동반한다" 는 규칙 한 줄을 서비스마다 목으로 배선한 파일 하나로 따랐고, 그 결과 서비스를 고칠 때마다 짝 테스트가 같이 고쳐졌다. 같이 바뀐다는 것은 테스트가 계약이 아니라 **구현을 복사하고 있다**는 뜻이다.
@@ -59,6 +74,22 @@ public function testLimitsExtensionWhenSomeoneIsWaiting(): void
 | **라벨 누락** | `#[Feature]` 없는 테스트 클래스가 없는가 (화이트리스트 예외만 허용) | 좌표 없이 떠도는 테스트 |
 
 커버리지 하한 검사가 의미를 가지려면 기능이 둘 이상이어야 한다. 이 저장소가 `equipment-queue` 와 `equipment-catalog` 를 두는 이유 중 하나다.
+
+### 테스트 배치
+
+```text
+apps/backend/tests/
+├── Unit/           #[Group('unit')]           T1
+├── Collaboration/  #[Group('collaboration')]  T2 — 인메모리 가짜 저장소 · MockClock
+├── Integration/    #[Group('integration')]    T3 — 실 DB
+├── Architecture/   #[Group('structure')]      T4 — FeatureCoverageTest
+└── Support/        # 가짜 구현 · #[Feature] 어트리뷰트 정의 (테스트 아님)
+```
+
+- `autoload-dev` PSR-4: `App\Tests\` → `tests/`.
+- `#[Feature]` 어트리뷰트는 `tests/Support/Feature.php` 에 정의한다. **테스트 메타데이터이므로 `src` 에 두지 않는다.**
+- `Support/` 는 테스트 클래스가 아니므로 T4 의 라벨 검사에서 제외된다(화이트리스트).
+- T4 가드는 저장소 루트의 `docs/features/` 를 읽는다. **`apps/backend` 는 모노레포 루트 안에 있음을 전제한다** — 백엔드만 따로 떼어 내면 이 검사가 깨진다.
 
 ---
 

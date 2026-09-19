@@ -14,12 +14,14 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 | **제품이 무엇이고 무엇을 하지 않는가** | [`../README.md`](../README.md) | 링크 |
 | 개발 정책·AI 권한 경계·정지선 | [`AGENTS.md`](../AGENTS.md) | 링크 |
 | 왜 모노레포인가 · apps/packages 경계의 근거 | [`architecture/monorepo.md`](architecture/monorepo.md) | 링크 |
-| OpenAPI → TS 계약 생성 경로·도구 선택 | [`architecture/api-contract.md`](architecture/api-contract.md) | 링크 |
-| 백엔드 아키텍처(계층·의존 방향·매핑·동시성)·도메인 파라미터·거부 사유 | [`architecture/backend.md`](architecture/backend.md) | 링크 |
-| 테스트 티어(T1~T4)·라벨 규약·가드의 정의 | [`coding/test-as-specification.md`](coding/test-as-specification.md) | 링크 |
+| HTTP 계약(엔드포인트·응답 형태·거부 사유)·OpenAPI → TS 생성 경로 | [`architecture/api-contract.md`](architecture/api-contract.md) | 링크. 5-2 단계 뒤 사실은 `openapi.json` |
+| 백엔드 아키텍처(계층·의존 방향·판정 객체·동시성·인증)·도메인 파라미터 | [`architecture/backend.md`](architecture/backend.md) | 링크 |
+| 물리 매핑(물리 타입·생성 컬럼 제약·인덱스)·마이그레이션 절차 | [`architecture/persistence.md`](architecture/persistence.md) | 링크 |
+| 백엔드 개발 환경(의존성·composer 스크립트·정적 분석·환경 변수) | [`../apps/backend/README.md`](../apps/backend/README.md) | 링크 |
+| 테스트 티어(T1~T4)·계층별 티어·라벨 규약·테스트 배치·가드의 정의 | [`coding/test-as-specification.md`](coding/test-as-specification.md) | 링크 |
 | 기능의 범위와 **최소 보장** | `features/<슬러그>/README.md` | 링크 |
 | 비즈니스 흐름·시스템 경계·레이어(그림) | `architecture/system-overview.md` | 링크. 만들어진 뒤의 사실은 코드가 정본 |
-| 엔티티 설계(논리 ERD·관계·식별자/상태/감사 필드 정책) | [`architecture/data-model.md`](architecture/data-model.md) | 링크. 물리 매핑은 `backend.md` §4 |
+| 엔티티 설계(논리 ERD·관계·식별자/상태/감사 필드 정책) | [`architecture/data-model.md`](architecture/data-model.md) | 링크. 물리 매핑은 `persistence.md` |
 | 도메인 용어의 정의 | `business/domain-glossary.md` | 링크. 용어를 바꾸면 쓰는 곳을 같은 커밋에서 |
 | BUILD-PLAN 한 단계의 세부 순서 | `plans/<단계>-<이름>.md` | 링크 |
 | 설계 문서의 산출물·골격·다이어그램 규약·화면 문구 규칙 | [`ai-agent/README.md`](ai-agent/README.md) | 링크 |

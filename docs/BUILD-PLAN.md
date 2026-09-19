@@ -33,6 +33,7 @@ gym-equipment-reservation/
 │
 ├── apps/
 │   ├── backend/                  # Symfony 7.4
+│   │   ├── README.md         # 개발 환경 (의존성·스크립트·환경 변수)
 │   │   ├── composer.json  phpunit.dist.xml  phpstan.neon.dist
 │   │   ├── .env  .env.test       # 커밋되는 기본값 (실제 값은 .env.local — 무시됨)
 │   │   ├── config/  public/  src/
@@ -64,6 +65,7 @@ gym-equipment-reservation/
     ├── architecture/monorepo.md
     ├── architecture/api-contract.md
     ├── architecture/backend.md
+    ├── architecture/persistence.md       # 물리 매핑·DB 제약·마이그레이션
     ├── architecture/system-overview.md   # 비즈니스 흐름·경계·레이어
     ├── architecture/data-model.md        # 엔티티 설계 (논리 ERD)
     ├── business/domain-glossary.md       # 도메인 용어집
@@ -106,7 +108,7 @@ gym-equipment-reservation/
 
 SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구에 진행 중인 사용 세션이 둘 생기는 것을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
 
-- 로컬: 개발 기기에 MariaDB 12.3 을 직접 설치해 띄운다(macOS 는 `brew install mariadb` → `brew services start mariadb`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`backend.md` §6.5](architecture/backend.md)).
+- 로컬: 개발 기기에 MariaDB 12.3 을 직접 설치해 띄운다(macOS 는 `brew install mariadb` → `brew services start mariadb`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`apps/backend/README.md` §4](../apps/backend/README.md)).
 - CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 12.3 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
 - 대가: **로컬에 MariaDB 가 없으면 통합 테스트를 못 돌린다.** T1·T2·T4 는 DB 없이 돌므로 커밋 가드는 영향받지 않는다.
 
@@ -117,7 +119,7 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구�
 | 단계 | 할 일 | 완료 조건 |
 |---|---|---|
 | 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
-| 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
+| 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1 · [`apps/backend/README.md`](../apps/backend/README.md)) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
 | 2-2 | **도메인 T1** — 값 객체와 대기열·사용 세션 정책, 목 없는 규칙 테스트 ([`../README.md`](../README.md) §3 의 규칙이 대상) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
 | 4 | 영속화 + **T2·T3** — 매핑·유니크 제약, 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |

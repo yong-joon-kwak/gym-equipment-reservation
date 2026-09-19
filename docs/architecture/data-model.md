@@ -6,7 +6,7 @@ user_validated: false
 # 데이터 모델 — 엔티티와 관계
 
 > 기준: 2026-09-19 · 입력 문서: 루트 [`README.md`](../../README.md) §3, [`domain-glossary.md`](../business/domain-glossary.md)(확정본), [`system-overview.md`](system-overview.md)
-> 되풀이하지 않는 것: 규칙의 값 → 루트 [`README.md`](../../README.md) §3 · 용어 정의 → [`domain-glossary.md`](../business/domain-glossary.md) · 물리 매핑(컬럼 타입·인덱스·불변식을 DB 로 강제하는 방법) → [`backend.md`](backend.md) §4
+> 되풀이하지 않는 것: 규칙의 값 → 루트 [`README.md`](../../README.md) §3 · 용어 정의 → [`domain-glossary.md`](../business/domain-glossary.md) · 물리 매핑(컬럼 타입·인덱스·불변식을 DB 로 강제하는 방법) → [`persistence.md`](persistence.md)
 >
 > **논리 모델이다.** 컬럼 길이·인덱스 이름은 적지 않는다. 구현된 뒤의 사실은 엔티티 코드와 마이그레이션이 정본이다.
 
@@ -156,7 +156,7 @@ stateDiagram-v2
 
 | 불변식 | 최종 보증 |
 |---|---|
-| 한 기구에 기록상 진행 중인 사용 세션은 최대 1개 | **DB 제약** (방법은 [`backend.md`](backend.md) §4) |
+| 한 기구에 기록상 진행 중인 사용 세션은 최대 1개 | **DB 제약** (방법은 [`persistence.md`](persistence.md) §3) |
 | 한 회원에게 기록상 진행 중인 사용 세션은 최대 1개 | **DB 제약** |
 | 한 회원에게 진행 중인 대기(`WAITING`·`CALLED`)는 최대 1개 | **DB 제약** |
 | 한 기구에 `CALLED` 인 대기는 최대 1개 | 도메인 |
@@ -187,6 +187,17 @@ stateDiagram-v2
 
 - 시각은 모두 **서울 시간(`Asia/Seoul`, KST +09:00)** 으로 저장·판정·표시한다. 시간대 변환 계층을 두지 않는다. 한국은 서머타임이 없어 시각이 겹치거나 빠지는 구간이 없다.
 - `max_usage_minutes` 를 세션에 따로 복사하지 않는다. 만료 시각이 정해지는 순간(첫 대기 등록)에 기구의 값을 읽는다. 그 사이에 관리자가 값을 바꾸면 바뀐 값이 쓰인다(→ 가정).
+
+### 만료 시각을 바꾸는 방법
+
+`expires_at` 은 `UsageSession` 의 메서드로만 바뀐다. 응용 서비스가 필드를 직접 쓰지 않는다([`backend.md`](backend.md) §2.6).
+
+| 사건 | 유스케이스 | `UsageSession` 메서드 | 결과 |
+|---|---|---|---|
+| 첫 대기 등록 | `TagEquipment` | `onWaiterArrived(now, maxMinutes, rules)` | 최대 사용시간 전이면 `started_at + 최대 사용시간`, 이미 넘겼으면 `now + 초과 중 대기` |
+| 마지막 대기가 취소 | `CancelQueueEntry` | `onWaitersGone()` | `null` |
+| 연장 | `ExtendSession` | `extend(now, rules)` | `+ 연장`, `extension_count + 1` |
+| 종료(모든 사유) | 여러 곳 | `end(reason, now, hasWaiters, rules, ?admin)` | `ended_at`·`end_reason`, 대기자가 있으면 `requeue_blocked_until` |
 
 ---
 
@@ -243,12 +254,13 @@ stateDiagram-v2
 - 대기 상태가 늘면 §1 `QueueEntry.status`, §4.2 그림, §4.3 불변식, 용어집 §4 를 같은 커밋에서 고친다.
 - 종료 사유가 늘면 §4.1 과 용어집 §3 `EndReason` 을 고친다.
 - 규칙 값(유예 2분·연장 5분·재대기 5분·초과 중 대기 5분)이 바뀌면 루트 README §3 만 고친다. 이 문서의 §5 는 값을 예시로만 인용하므로 같이 고친다.
-- 불변식을 DB 로 강제하는 방법이 정해지면 [`backend.md`](backend.md) §4 에 쓰고, §4.3 의 "최종 보증" 칸은 그대로 둔다.
+- 불변식을 DB 로 강제하는 방법이 바뀌면 [`persistence.md`](persistence.md) §3 에 쓰고, §4.3 의 "최종 보증" 칸은 그대로 둔다.
 
 ## 변경 이력
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §5 에 "만료 시각을 바꾸는 방법" 추가(`backend.md` 옛 §2.6 에서 이관). 물리 매핑 링크를 `persistence.md` 로 | 엔티티의 상태 전이는 엔티티 설계 문서가 소유한다. 물리 매핑이 별도 문서로 분리됨 |
 | 2026-09-19 | 사용자 수정 반영 — ① 대기자가 없으면 만료·연장·알림이 없다. `expires_at` 은 대기자가 생길 때 정해지고, 최대 사용시간을 넘긴 뒤 생기면 대기 등록 + 5분 ② 관리자는 기구를 쓰지 않는 `member_type = ADMIN` 회원 ③ `had_waiters_at_end` 대신 `requeue_blocked_until`(재대기 제한이 풀리는 시각) | 사용자 결정 |
 | 2026-09-19 | 사용자 수정 반영 — ① PK 를 `<엔티티>_id` 로, 역할 FK 는 `ended_by_member_id`·`started_usage_session_id` ② 모든 엔티티에 `dbstatus`(`'A'` Alive / `'D'` Deleted) 소프트 삭제 ③ 시각은 UTC 대신 서울 시간 | 사용자 결정 |
 | 2026-09-19 | 초안 작성. 엔티티 넷(Member · Equipment · UsageSession · QueueEntry), 대기 상태 다섯, 불변식, 저장/계산 구분 | 사용자 인터뷰 — 행 = 이력, Member 는 DB 엔티티, 지연 정리는 E + M, 순번은 계산, 대기 상태 WAITING·STARTED 추가, 취소는 상태 1개 + 사유 |

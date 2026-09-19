@@ -6,7 +6,7 @@ user_validated: false
 # 시스템 개요 — 누가 쓰고, 무엇이 어떻게 흐르는가
 
 > 기준: 2026-09-19 · 입력 문서: 루트 [`README.md`](../../README.md) §2~§5, [`domain-glossary.md`](../business/domain-glossary.md)(확정본)
-> 되풀이하지 않는 것: 규칙의 값과 근거 → 루트 [`README.md`](../../README.md) §3 · 용어 정의 → [`domain-glossary.md`](../business/domain-glossary.md) · 백엔드 내부 계층 → [`backend.md`](backend.md) · 계약 생성 경로 → [`api-contract.md`](api-contract.md) · 엔티티 → [`data-model.md`](data-model.md)
+> 되풀이하지 않는 것: 규칙의 값과 근거 → 루트 [`README.md`](../../README.md) §3 · 용어 정의 → [`domain-glossary.md`](../business/domain-glossary.md) · 백엔드 내부 계층 → [`backend.md`](backend.md) · HTTP 계약·거부 사유 → [`api-contract.md`](api-contract.md) · 엔티티 → [`data-model.md`](data-model.md)
 >
 > 그림은 **설계 의도**다. 구현된 뒤의 사실은 코드가 정본이다.
 
@@ -173,7 +173,7 @@ flowchart LR
 - 태깅 판정에 분기가 늘면 §2.1 에 `Is…` 판단 노드와 결과 노드를 추가한다. 순서가 바뀌면 루트 README §2 의 텍스트 흐름도 같은 커밋에서 고친다.
 - 노쇼 유예·호출 시각 규칙이 바뀌면 §2.2 의 `alt` 블록과 설명을 고친다.
 - 푸시 알림(Mercure 승격, 루트 README §6)이 들어오면 §1 에 서버 → 화면 화살표를, §2.2 에 폴링 대신 푸시를 그린다.
-- 거부 사유가 바뀌면 [`backend.md`](backend.md) §3 을 먼저 고치고 §2.1 의 `Reject_…` 라벨을 맞춘다.
+- 거부 사유가 바뀌면 [`api-contract.md`](api-contract.md) §3 을 먼저 고치고 §2.1 의 `Reject_…` 라벨을 맞춘다.
 
 ## 변경 이력
 

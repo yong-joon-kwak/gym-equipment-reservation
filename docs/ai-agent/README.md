@@ -38,7 +38,7 @@
 | 단계 계획 | `docs/plans/<단계>-<이름>.md` 예: `plans/2-2-domain-t1.md` | [`BUILD-PLAN.md`](../BUILD-PLAN.md) §3 한 칸의 세부 순서 | 세부 단계 · 확인 방법 · 결정 사항 |
 
 - 3종은 기능별로 나누지 않고 **저장소 전체에 한 벌**이다. 기능의 범위·최소 보장은 여전히 `features/<슬러그>/README.md` 가 정본이다.
-- **B 와 [`backend.md`](../architecture/backend.md) 의 경계**: B 는 엔티티 설계(무엇이 있고 어떻게 관계 맺는가), `backend.md` 는 백엔드 아키텍처(계층·의존 방향·매핑·동시성 처리)를 담는다. 엔티티 정의는 B 에만 있고, `backend.md` §4 는 그 불변식을 DB 로 강제하는 물리 매핑만 담는다.
+- **B 와 [`backend.md`](../architecture/backend.md) · [`persistence.md`](../architecture/persistence.md) 의 경계**: B 는 엔티티 설계(무엇이 있고 어떻게 관계 맺는가), `backend.md` 는 백엔드 아키텍처(계층·의존 방향·판정 객체·동시성 처리)를 담는다. 엔티티 정의는 B 에만 있고, `persistence.md` 는 그 불변식을 DB 로 강제하는 물리 매핑만 담는다.
 - B 는 물리 스키마가 확정되기 전에는 **논리 모델**로 쓴다. 컬럼 길이·인덱스 이름은 적지 않는다.
 
 **C. 용어집 표 컬럼**

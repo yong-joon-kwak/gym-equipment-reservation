@@ -135,5 +135,7 @@ composer -d apps/backend run test
 - [`docs/business/domain-glossary.md`](docs/business/domain-glossary.md) — 도메인 용어집
 - [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) — 만드는 순서
 - [`docs/architecture/backend.md`](docs/architecture/backend.md) — 백엔드 구조
+- [`docs/architecture/persistence.md`](docs/architecture/persistence.md) — 물리 매핑·DB 제약
+- [`apps/backend/README.md`](apps/backend/README.md) — 백엔드 개발 환경
 - [`docs/architecture/api-contract.md`](docs/architecture/api-contract.md) — API 계약
 - [`docs/coding/test-as-specification.md`](docs/coding/test-as-specification.md) — 테스트 구조

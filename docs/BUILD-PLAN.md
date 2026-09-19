@@ -161,7 +161,7 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구�
 
 화면은 셋이다 — **현황 목록**(전체 기구의 사용 중·대기 인원), **기구 상세**(QR 이 가리키는 곳. 태깅·내 순번·남은 시간), **관리자**(기구 등록·최대시간·비활성화·강제 종료). 미인증이면 로그인 폼을 띄운다. 넓히지 않는다. 범위의 정본은 [`../README.md`](../README.md).
 
-프론트의 "최소 보장"(Vitest 로 고정할 것)은 각 기능 문서가 정본이다 — `features/equipment-queue/README.md`(작성 예정) · [`features/equipment-catalog/README.md`](features/equipment-catalog/README.md).
+프론트의 "최소 보장"(Vitest 로 고정할 것)은 각 기능 문서가 정본이다 — [`features/equipment-queue/README.md`](features/equipment-queue/README.md) · [`features/equipment-catalog/README.md`](features/equipment-catalog/README.md).
 
 현황 갱신은 폴링이다. 서버 푸시(Mercure)로 올리는 것은 배포층 결정과 함께 다룬다(§7).
 

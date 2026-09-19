@@ -84,7 +84,7 @@
 - 모노레포 구조 고찰: `docs/architecture/monorepo.md`
 - API 계약(OpenAPI → TS): `docs/architecture/api-contract.md`
 - 테스트를 명세로 쓰는 구조: `docs/coding/test-as-specification.md`
-- 기능 문서: `docs/features/equipment-queue/README.md`(작성 예정 — BUILD-PLAN 2-2) · `docs/features/equipment-catalog/README.md`
+- 기능 문서: `docs/features/equipment-queue/README.md` · `docs/features/equipment-catalog/README.md`
 
 ---
 

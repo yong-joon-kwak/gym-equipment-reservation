@@ -74,7 +74,7 @@ QR 스캔 → /e/TM-01 진입 → 서버가 지금 상태를 보고 정한다
 
 | 이름 | 범위 |
 |---|---|
-| `equipment-queue` | 태깅 · 사용 세션 · 연장 · 종료 · 대기열 · 차례 호출과 노쇼 |
+| [`equipment-queue`](docs/features/equipment-queue/README.md) | 태깅 · 사용 세션 · 연장 · 종료 · 대기열 · 차례 호출과 노쇼 |
 | [`equipment-catalog`](docs/features/equipment-catalog/README.md) | 기구 등록·수정·최대시간 설정·비활성화, 목록 조회 |
 
 둘 사이에는 계약이 있다 — **비활성화된 기구는 태깅할 수 없고, 비활성화하면 진행 중인 사용 세션은 강제 종료되고 그 기구의 대기는 모두 취소된다.** 판정은 서버가 한다.

@@ -28,7 +28,7 @@ apps/backend/src/
 │   ├── Equipment/              #   RegisterEquipment · UpdateEquipment · DeactivateEquipment
 │   └── Status/                 #   GetEquipmentStatus · GetEquipmentDetail — 조회는 계산만 한다
 ├── Infrastructure/
-│   ├── Doctrine/               #   리포지토리 구현 · 타입 매핑
+│   ├── Doctrine/               #   리포지토리 구현(ServiceEntityRepository 상속) · 타입 매핑
 │   └── Security/               #   SecurityUser(Member 를 감싼다) · 사용자 공급자
 └── Ui/Http/                    # 컨트롤러 · 요청/응답 DTO · 예외 → HTTP 변환
 ```
@@ -37,12 +37,33 @@ apps/backend/src/
 
 | 계층 | 알아도 되는 것 | 절대 모르는 것 |
 |---|---|---|
-| `Domain` | PHP 표준 · `Psr\Clock` | Doctrine 의 동작 · Symfony · HTTP · 다른 계층 |
+| `Domain` | PHP 표준 · `Psr\Clock` · `Doctrine\ORM\Mapping` 어트리뷰트(메타데이터만) | Doctrine 의 동작(`EntityManager` · 리포지토리 기반 클래스 · 라이프사이클 콜백) · Symfony · HTTP · 다른 계층 |
 | `Application` | `Domain` (인터페이스로만 밖을 부른다) | Doctrine · HTTP |
 | `Infrastructure` | `Domain` · Doctrine · Symfony Security | `Ui` |
 | `Ui/Http` | `Application` · DTO | `Domain` 엔티티를 응답에 직접 싣지 않는다 |
 
-엔티티는 `Domain` 에 두고 Doctrine 매핑 어트리뷰트만 붙인다(§4.1). 어트리뷰트는 메타데이터일 뿐이라 도메인이 Doctrine 의 동작을 알게 되지는 않는다.
+엔티티는 `Domain` 에 두고 Doctrine 매핑 어트리뷰트만 붙인다(§4.1). 어트리뷰트는 메타데이터일 뿐이라 도메인이 Doctrine 의 동작을 알게 되지는 않는다. `Domain` 에 허용되는 Doctrine 의존은 **`Doctrine\ORM\Mapping` 네임스페이스 하나뿐**이다.
+
+### 엔티티와 리포지토리가 놓이는 자리
+
+`Domain` 은 계층의 이름이지 객체의 한 종류가 아니다. 엔티티는 `Domain` 에 있는 여러 종류 중 하나다. 영속되는가는 저장하는 쪽의 사정이라, 도메인 개념을 나누는 기준이 아니다.
+
+| 종류 | 무엇 | 예 | 자리 |
+|---|---|---|---|
+| 엔티티 | 식별자와 수명이 있고 상태가 바뀐다 | `UsageSession` · `QueueEntry` | `Domain/<개념>/` |
+| 값 객체 | 식별자 없이 값으로만 같다 | `EquipmentCode` · `QueueRules` · `TagDecision` | `Domain/<개념>/` · `Domain/Shared/` |
+| 판정 객체 | 규칙을 판정한다(§2) | `TagPolicy` · `SettlementPolicy` | `Domain/<개념>/` |
+| 리포지토리 **인터페이스** | 도메인 언어로 적은 저장·조회 약속 | `UsageSessionRepository::findActiveByMember()` | `Domain/<개념>/` |
+| 리포지토리 **구현** | Doctrine 으로 그 약속을 지킨다 | `DoctrineUsageSessionRepository` | `Infrastructure/Doctrine/` |
+| T2 가짜 | 같은 인터페이스를 메모리로 지킨다 | `InMemoryUsageSessionRepository` | `tests/Support/` |
+
+**Symfony 기본 배치(`src/Entity` · `src/Repository`)를 쓰지 않는다.** 기본 배치는 종류별로 묶는데, 여기서는 개념별로 묶는다.
+
+- **함께 바뀌는 것이 한 폴더에 있다.** `UsageSession` · `EndReason` · `UsageSessionRepository` 는 규칙이 바뀔 때 같이 바뀐다. 종류별로 두면 한 번의 변경이 세 폴더에 흩어진다.
+- **기본 배치의 리포지토리는 Doctrine 구현 그 자체다.** `ServiceEntityRepository` 를 상속하므로, 통째로 `Domain` 에 들이면 도메인이 Doctrine 의 동작에 의존한다. 그래서 리포지토리는 **인터페이스(`Domain`)와 구현(`Infrastructure`)으로 쪼갠다.**
+- 인터페이스가 `Domain` 에 있어야 T2 가 그것을 인메모리로 구현할 수 있다(아래 티어 표).
+
+대가: Symfony 기본값 몇 곳을 바꿔야 하고, `make:entity` 의 도움을 덜 받는다(§4.1).
 
 ### 계층마다 제 티어가 있다
 
@@ -198,6 +219,14 @@ equipment_inactive → 내가 사용 중 → 내가 호출됨 → 내가 대기 
 - 테이블 이름은 엔티티의 snake_case 단수형이다 — `member` · `equipment` · `usage_session` · `queue_entry`.
 - PK 컬럼 이름은 `<엔티티>_id` 다([`data-model.md` §3](data-model.md)).
 - 엔진 InnoDB, `utf8mb4` / `utf8mb4_unicode_ci`.
+
+**Symfony 기본값과 다르게 두는 곳** — 엔티티를 `Domain` 에 두기 때문이다(§1).
+
+| 무엇 | 기본값 | 여기서 |
+|---|---|---|
+| `config/packages/doctrine.yaml` 매핑 | `dir: src/Entity` · `prefix: App\Entity` | `dir: src/Domain` · `prefix: App\Domain`. 어트리뷰트 드라이버는 `#[ORM\Entity]` 가 붙은 클래스만 매핑하므로 값 객체·판정 객체가 같은 폴더에 있어도 된다 |
+| `config/services.yaml` 의 `App\:` 제외 목록 | `src/Entity` 를 서비스 등록에서 뺀다 | 엔티티·값 객체를 서비스로 등록하지 않게 `Domain` 쪽 제외를 둔다. 판정 객체는 `QueueRules` 를 주입받아야 하므로 서비스로 남긴다(§2.4) |
+| `make:entity` | `App\Entity` 에 엔티티, `src/Repository` 에 리포지토리 생성 | 전체 클래스명을 넘기고, 생성된 리포지토리는 인터페이스(`Domain`)와 구현(`Infrastructure/Doctrine`)으로 나눈다 |
 
 ### 4.2 논리 타입 → 물리 타입
 
@@ -413,6 +442,7 @@ apps/backend/tests/
 | 항목 | 언제 정하나 | 무엇에 달렸나 |
 |---|---|---|
 | 생성 컬럼을 엔티티 매핑에서 다루는 법 | 4 단계 | 매핑하지 않으면 `doctrine:migrations:diff` 가 그 컬럼을 지우자고 제안한다. 읽기 전용 매핑(`insertable: false, updatable: false`)으로 둘지, diff 결과를 손으로 정리할지를 실제로 돌려 보고 정한다 |
+| 의존 방향 가드 | 3 단계(T4 가드) | §1 의 티어 표는 T4 가 의존 방향을 검사한다고 적지만, [`test-as-specification.md`](../coding/test-as-specification.md) 의 T4 는 아직 `FeatureCoverageTest` 뿐이다. `Domain` 이 `Doctrine\ORM\Mapping` 밖의 Doctrine·Symfony 를 쓰지 않는지 검사할 방법(리플렉션 테스트 또는 도구)을 정한다 |
 | 시드 계정을 넣는 방법 | 5-1 단계 | 개발용 콘솔 명령과 데이터 마이그레이션 중 하나. 비밀번호 해시가 필요하므로 콘솔 명령이 유력하다 |
 
 ---
@@ -421,4 +451,5 @@ apps/backend/tests/
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | §1 에 "엔티티와 리포지토리가 놓이는 자리" 추가 — `Domain` 은 계층이고 엔티티는 그 안의 한 종류, 개념별 배치, 리포지토리는 인터페이스(`Domain`)·구현(`Infrastructure`)으로 분리. `Domain` 에 허용되는 Doctrine 의존을 `Doctrine\ORM\Mapping` 하나로 명시. §4.1 에 Symfony 기본값과 다른 설정, §8 에 의존 방향 가드 추가 | 사용자 논의 — 엔티티를 영속성 기준으로 도메인과 나누면 판정 객체가 바깥 계층에 의존하게 된다. Symfony 기본 `src/Repository` 는 Doctrine 구현이라 도메인에 그대로 들일 수 없다 |
 | 2026-09-19 | §1~§5·§7 재작성 — 예약 모델을 걷어내고 실시간 점유·대기열 기준으로. 판정 객체 셋(Tag · Settlement · Extension), 거부 사유 17개(snake_case), 생성 컬럼 + 유니크로 불변식 강제, 세션 로그인, 엔드포인트 열네 개. 엔티티 정의는 `data-model.md` 로 넘김 | 사용자 인터뷰 — 전부 지금 재작성, reason 은 snake_case, 동시성은 생성 컬럼 + 유니크, 판정 객체 하나, QR 진입 시 자동 태깅하되 사용 중이면 종료 버튼 |

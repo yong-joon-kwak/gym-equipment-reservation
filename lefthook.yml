@@ -1,0 +1,50 @@
+# 커밋·푸시 가드. 배치의 근거는 docs/BUILD-PLAN.md §6.
+#
+# skip 의 `test ! -f ...` 는 아직 만들지 않은 단계를 건너뛰기 위한 것이다.
+# 해당 단계를 끝내면 그 skip 블록을 지운다 (2단계 → backend, 6단계 → api-client, 7단계 → frontend).
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: stan
+      run: composer -d apps/backend run stan
+      skip:
+        - run: test ! -f apps/backend/composer.json
+
+    - name: phpunit-fast
+      run: composer -d apps/backend run test:fast
+      skip:
+        - run: test ! -f apps/backend/composer.json
+
+    - name: typecheck
+      run: npm run typecheck
+      skip:
+        - run: test ! -f apps/frontend/package.json
+
+    - name: vitest
+      run: npm run test:front
+      skip:
+        - run: test ! -f apps/frontend/package.json
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: stan
+      run: composer -d apps/backend run stan
+      skip:
+        - run: test ! -f apps/backend/composer.json
+
+    - name: phpunit-all
+      run: composer -d apps/backend run test
+      skip:
+        - run: test ! -f apps/backend/composer.json
+
+    - name: typecheck
+      run: npm run typecheck
+      skip:
+        - run: test ! -f apps/frontend/package.json
+
+    - name: vitest
+      run: npm run test:front
+      skip:
+        - run: test ! -f apps/frontend/package.json

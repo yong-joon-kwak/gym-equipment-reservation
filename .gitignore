@@ -11,6 +11,11 @@ node_modules/
 apps/frontend/dist/
 coverage/
 
+# --- 로컬 도구·OS ---
+lefthook-local.yml
+.DS_Store
+.idea/
+
 # 생성물이지만 커밋 대상이다 — 무시하지 않는다 (AGENTS.md §5):
 #   apps/backend/openapi/openapi.json
 #   packages/api-client/src/generated.ts

@@ -1,0 +1,80 @@
+# 검증의 정본. 배치의 근거는 docs/BUILD-PLAN.md §6.
+# 각 잡은 해당 단계(2~9)가 끝나면서 차례로 초록이 된다.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  backend:
+    name: backend (PHP 8.4 · MariaDB 11.4)
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci
+          MARIADB_DATABASE: gym_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: "mysql://root:ci@127.0.0.1:3306/gym_test?serverVersion=mariadb-11.4.0&charset=utf8mb4"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - run: composer -d apps/backend install --no-interaction --prefer-dist
+      - name: phpstan (max)
+        run: composer -d apps/backend run stan
+      - name: 빠른 티어 (T1·T2·T4)
+        run: composer -d apps/backend run test:fast
+      - name: 전체 (T3 포함)
+        run: composer -d apps/backend run test
+      - name: 명세 출력
+        run: composer -d apps/backend run test:testdox
+
+  frontend:
+    name: frontend (Vue 3 · Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: vue-tsc
+        run: npm run typecheck
+      - name: vitest
+        run: npm run test:front
+      - name: vite build
+        run: npm -w apps/frontend run build
+
+  contract:
+    name: contract (OpenAPI drift)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: composer -d apps/backend install --no-interaction --prefer-dist
+      - run: npm ci
+      - name: 스펙·타입 재생성
+        run: npm run api:sync
+      - name: 재생성 누락 검사
+        run: git diff --exit-code

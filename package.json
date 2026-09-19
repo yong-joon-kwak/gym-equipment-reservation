@@ -1,0 +1,21 @@
+{
+  "name": "gym-equipment-reservation",
+  "private": true,
+  "workspaces": [
+    "apps/frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "api:spec": "composer -d apps/backend run api:spec",
+    "api:sync": "npm run api:spec && npm -w packages/api-client run generate",
+    "typecheck": "npm -w apps/frontend run typecheck",
+    "test:front": "npm -w apps/frontend run test",
+    "test:api": "composer -d apps/backend run test",
+    "test:api:fast": "composer -d apps/backend run test:fast",
+    "stan": "composer -d apps/backend run stan",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "lefthook": "^1.13.6"
+  }
+}

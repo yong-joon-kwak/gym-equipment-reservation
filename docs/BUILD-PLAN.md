@@ -29,19 +29,20 @@ gym-equipment-reservation/
 ├── CLAUDE.md                     # "AGENTS.md 를 따르라" 만
 ├── package.json                  # npm workspaces 루트 (apps/frontend, packages/*)
 ├── lefthook.yml                  # 커밋/푸시 가드 (백+프론트)
-├── .env.dist                     # 복사해 쓰는 환경 변수 견본
 ├── .github/workflows/ci.yml      # backend · frontend · contract 3잡
 │
 ├── apps/
 │   ├── backend/                  # Symfony 7.4
-│   │   ├── composer.json  phpunit.xml.dist  phpstan.neon.dist
+│   │   ├── composer.json  phpunit.dist.xml  phpstan.neon.dist
+│   │   ├── .env  .env.test       # 커밋되는 기본값 (실제 값은 .env.local — 무시됨)
 │   │   ├── config/  public/  src/
 │   │   ├── openapi/openapi.json  # nelmio 로 생성 (커밋 대상)
 │   │   └── tests/
 │   │       ├── Unit/             # T1 규칙 — 목 없음
 │   │       ├── Collaboration/    # T2 협력 — 경계만 가짜(fake)
 │   │       ├── Integration/      # T3 통합 — 실 DB
-│   │       └── Architecture/     # T4 구조 — FeatureCoverageTest
+│   │       ├── Architecture/     # T4 구조 — FeatureCoverageTest
+│   │       └── Support/          # 가짜 구현·#[Feature] 정의 (테스트 아님)
 │   │
 │   └── frontend/                 # Vue 3 + Vite + TS
 │       ├── package.json  vite.config.ts  tsconfig.json  index.html
@@ -99,7 +100,7 @@ gym-equipment-reservation/
 
 SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활성 슬롯 중복 저장을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
 
-- 로컬: 개발 기기에 MariaDB 11.4 를 직접 설치해 띄운다(macOS 는 `brew install mariadb@11.4` → `brew services start mariadb@11.4`). 빈 스키마 하나를 만들고, 접속 정보는 `.env.dist` 를 복사한 `apps/backend/.env` 의 `DATABASE_URL` 에 넣는다.
+- 로컬: 개발 기기에 MariaDB 11.4 를 직접 설치해 띄운다(macOS 는 `brew install mariadb@11.4` → `brew services start mariadb@11.4`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`backend.md` §6.5](architecture/backend.md)).
 - CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 11.4 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
 - 대가: **로컬에 MariaDB 가 없으면 통합 테스트를 못 돌린다.** T1·T2·T4 는 DB 없이 돌므로 커밋 가드는 영향받지 않는다.
 
@@ -109,8 +110,8 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 
 | 단계 | 할 일 | 완료 조건 |
 |---|---|---|
-| 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.env.dist` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
-| 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
+| 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
+| 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
 | 2-2 | **도메인 T1** — 값 객체·엔티티·`ReservationPolicy` 와 목 없는 규칙 테스트 ([`backend.md`](architecture/backend.md) §2·§3) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
 | 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) ([`backend.md`](architecture/backend.md) §4) | 전체 스위트 초록 (로컬 MariaDB 필요) |

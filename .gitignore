@@ -1,8 +1,9 @@
 # --- PHP (apps/backend) ---
 apps/backend/vendor/
 apps/backend/var/
-apps/backend/.env
 apps/backend/.env.local
+apps/backend/.env.*.local
+apps/backend/phpunit.xml
 .phpunit.result.cache
 .phpunit.cache/
 

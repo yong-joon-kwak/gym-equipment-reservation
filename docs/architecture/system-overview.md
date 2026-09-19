@@ -60,19 +60,19 @@ flowchart TD
     IsMyWait{"M 이 E 에서<br/>기다리는 중인가?"}
     IsAvailable{"E 가 비어 있음인가?"}
     IsEnqueueAllowed{"대기 등록 조건"}
-    UC_EndByMember["본인 종료"]
+    UC_ShowEndButton["변화 없음<br/>종료 버튼 표시"]
     UC_StartSession["사용 시작<br/>M 의 다른 사용 세션은 전환 종료"]
     UC_ShowPosition["변화 없음<br/>내 순번 표시"]
     UC_Enqueue["대기 등록<br/>첫 대기면 사용 중 세션의 만료 시각이 정해짐"]
-    Reject_Inactive["거부: 비활성 기구"]
-    Reject_OtherWait["거부: 이미 다른 대기가 있음"]
-    Reject_Cooldown["거부: 재대기 제한"]
+    Reject_Inactive["거부: 비활성 기구<br/>equipment_inactive"]
+    Reject_OtherWait["거부: 이미 다른 대기가 있음<br/>already_waiting_elsewhere"]
+    Reject_Cooldown["거부: 재대기 제한<br/>requeue_blocked"]
 
     %% 관계
     UC_Settle --> IsInactive
     IsInactive -->|"예"| Reject_Inactive
     IsInactive -->|"아니오"| IsMyUsage
-    IsMyUsage -->|"예"| UC_EndByMember
+    IsMyUsage -->|"예"| UC_ShowEndButton
     IsMyUsage -->|"아니오"| IsMyCall
     IsMyCall -->|"예"| UC_StartSession
     IsMyCall -->|"아니오"| IsMyWait
@@ -85,7 +85,8 @@ flowchart TD
     IsEnqueueAllowed -->|"통과"| UC_Enqueue
 ```
 
-- **판정은 위에서 아래로 한 번만** 내려간다. 회원은 무엇을 할지 고르지 않는다 — 같은 QR 이 상황에 따라 시작·대기·종료가 된다.
+- **판정은 위에서 아래로 한 번만** 내려간다. 회원은 무엇을 할지 고르지 않는다 — 같은 QR 이 상황에 따라 시작·대기가 된다.
+- **태깅으로는 끝나지 않는다.** 쓰는 중에 다시 태깅하면 종료 버튼이 보일 뿐이고, 본인 종료는 그 버튼으로 한다. QR 페이지를 새로고침할 때마다 태깅이 다시 오기 때문이다([`backend.md` §2.2](backend.md)).
 - 첫 단계가 **지연 정리**다. 워커가 없으므로, 판정 전에 **기구 E 와 회원 M** 의 만료된 사용 세션과 유예가 지난 호출을 여기서 기록으로 확정한다. 그래야 "비어 있음"·"사용 중" 판단이 지금 시각 기준으로 맞다. M 을 함께 정리하는 이유: M 이 다른 기구에서 쓰던 세션이 이미 만료였다면, 그것은 전환 종료가 아니라 만료로 기록되어야 한다.
 - "사용 중" 에는 **차례 호출된 대기가 노쇼 유예 중인 경우**도 들어간다. 그래서 호출 중인 기구를 다른 회원이 태깅하면 가로채지 못하고 대기 등록 쪽으로 간다.
 - 사용 시작이 M 의 다른 사용 세션을 전환 종료하면, **그 기구의 대기열에서 차례 호출**이 일어난다(§2.2).
@@ -104,7 +105,7 @@ sequenceDiagram
     actor Actor_MemberC as 회원 C (순번 2)
     participant Layer_Backend as 서버
 
-    Actor_MemberA->>Layer_Backend: 같은 기구를 태깅 (본인 종료)
+    Actor_MemberA->>Layer_Backend: 종료 버튼 (본인 종료)
     Layer_Backend->>Layer_Backend: 종료 기록, B 를 차례 호출 (호출 시각 = A 종료 시각)
     Actor_MemberB->>Layer_Backend: 기구 상세 폴링
     Layer_Backend-->>Actor_MemberB: 내 차례, 남은 유예 2분
@@ -165,7 +166,6 @@ flowchart LR
 
 | 항목 | 무엇이 정해지면 확정되는가 | 누구에게 |
 |---|---|---|
-| 거부 사유 코드 이름 | §2.1 의 거부 셋 중 `equipment_inactive` 만 정해져 있다. 나머지 둘의 `reason` 값은 [`backend.md`](backend.md) §3(재작성 대기)에서 정해지면 그림 라벨에 붙인다 | 개발자 (5-2 단계) |
 | 폴링 간격 | 값이 정해지면 §2.2 의 "화면에 보이는 남은 유예가 짧아지는 폭" 을 적는다 | 개발자 (7 단계) |
 
 ## 변경 포인트
@@ -173,12 +173,13 @@ flowchart LR
 - 태깅 판정에 분기가 늘면 §2.1 에 `Is…` 판단 노드와 결과 노드를 추가한다. 순서가 바뀌면 루트 README §2 의 텍스트 흐름도 같은 커밋에서 고친다.
 - 노쇼 유예·호출 시각 규칙이 바뀌면 §2.2 의 `alt` 블록과 설명을 고친다.
 - 푸시 알림(Mercure 승격, 루트 README §6)이 들어오면 §1 에 서버 → 화면 화살표를, §2.2 에 폴링 대신 푸시를 그린다.
-- 거부 사유 코드가 정해지면 §2.1 의 `Reject_…` 라벨에 코드를 붙이고 TBD 에서 지운다.
+- 거부 사유가 바뀌면 [`backend.md`](backend.md) §3 을 먼저 고치고 §2.1 의 `Reject_…` 라벨을 맞춘다.
 
 ## 변경 이력
 
 | 날짜 | 변경 | 근거 |
 |---|---|---|
+| 2026-09-19 | 사용 중 재태깅은 본인 종료가 아니라 "종료 버튼 표시" 로. 거부 셋에 `reason` 코드를 붙이고 TBD 에서 지움 | backend 인터뷰 |
 | 2026-09-19 | 대기 등록이 만료 시각을 정한다는 점과, 관리자는 태깅 판정을 타지 않는다는 점을 §2.1 에 반영 | 사용자 결정 (data-model 검토) |
 | 2026-09-19 | 지연 정리 범위를 기구 E 에서 E + 회원 M 으로 넓힘 | data-model 인터뷰에서 결정 |
 | 2026-09-19 | 초안 작성. 컨텍스트, 유스케이스 두 개(태깅 판정 · 차례 호출과 노쇼), 시스템 수준 레이어 | 사용자 인터뷰 — 유스케이스는 둘로, 레이어는 시스템 수준만, 흐름은 업무 수준 참가자로 |

@@ -104,7 +104,7 @@ gym-equipment-reservation/
 
 ### DB — MariaDB 단일
 
-SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구에 활성 세션이 둘 생기는 것을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
+SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구에 진행 중인 사용 세션이 둘 생기는 것을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
 
 - 로컬: 개발 기기에 MariaDB 12.3 을 직접 설치해 띄운다(macOS 는 `brew install mariadb` → `brew services start mariadb`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`backend.md` §6.5](architecture/backend.md)).
 - CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 12.3 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
@@ -118,7 +118,7 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구�
 |---|---|---|
 | 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
 | 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
-| 2-2 | **도메인 T1** — 값 객체와 큐·세션 정책, 목 없는 규칙 테스트 ([`../README.md`](../README.md) §3 의 규칙이 대상) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
+| 2-2 | **도메인 T1** — 값 객체와 대기열·사용 세션 정책, 목 없는 규칙 테스트 ([`../README.md`](../README.md) §3 의 규칙이 대상) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
 | 4 | 영속화 + **T2·T3** — 매핑·유니크 제약, 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
 | 5-1 | **인증** — 세션 기반 로그인(`json_login`), 시드 회원·관리자, 역할 구분 | 로그인 후 현재 회원을 돌려주는 엔드포인트가 T3 로 초록 |

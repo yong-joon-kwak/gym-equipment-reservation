@@ -8,7 +8,7 @@ status: in-progress
 > 이 문서는 "무엇을 어떤 순서로 만들고, 각 단계가 언제 끝난 것인가" 만 정한다.
 > 왜 모노레포인가는 [`architecture/monorepo.md`](architecture/monorepo.md), 문서 규칙은 [`README.md`](README.md).
 >
-> 스택: **백엔드 PHP 8.4 · Symfony 7.4 · MariaDB 11.4** / **프론트 Vue 3 · Vite · TypeScript · Vitest** / **계약 OpenAPI → TypeScript**
+> 스택: **백엔드 PHP 8.4 · Symfony 7.4 · MariaDB 12.3** / **프론트 Vue 3 · Vite · TypeScript · Vitest** / **계약 OpenAPI → TypeScript**
 
 ---
 
@@ -48,7 +48,7 @@ gym-equipment-reservation/
 │       ├── package.json  vite.config.ts  tsconfig.json  index.html
 │       └── src/
 │           ├── main.ts  App.vue
-│           ├── features/equipment-reservation/   # 화면 + 스토어 + *.spec.ts
+│           ├── features/equipment-queue/         # 화면 + 스토어 + *.spec.ts
 │           ├── features/equipment-catalog/
 │           └── shared/
 │
@@ -66,7 +66,7 @@ gym-equipment-reservation/
     ├── architecture/backend.md
     ├── coding/test-as-specification.md
     └── features/
-        ├── equipment-reservation/README.md
+        ├── equipment-queue/README.md
         └── equipment-catalog/README.md
 ```
 
@@ -84,11 +84,12 @@ gym-equipment-reservation/
   "private": true,
   "workspaces": ["apps/frontend", "packages/*"],
   "scripts": {
-    "api:sync":   "npm -w apps/backend run api:spec && npm -w packages/api-client run generate",
+    "api:spec":   "composer -d apps/backend run api:spec",
+    "api:sync":   "npm run api:spec && npm -w packages/api-client run generate",
     "typecheck":  "npm -w apps/frontend run typecheck",
     "test:front": "npm -w apps/frontend run test",
-    "test:api":   "composer -d apps/backend test",
-    "stan":       "composer -d apps/backend stan"
+    "test:api":   "composer -d apps/backend run test",
+    "stan":       "composer -d apps/backend run stan"
   }
 }
 ```
@@ -98,10 +99,10 @@ gym-equipment-reservation/
 
 ### DB — MariaDB 단일
 
-SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활성 슬롯 중복 저장을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
+SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(한 기구에 활성 세션이 둘 생기는 것을 유니크 제약이 막는다)이 이 기능의 최소 보장에 들어 있고, 그 보장은 운영형 DB 에서만 진짜다.** 두 DB 를 지원하면 통합 테스트가 어느 쪽에서 초록인지 모호해진다.
 
-- 로컬: 개발 기기에 MariaDB 11.4 를 직접 설치해 띄운다(macOS 는 `brew install mariadb@11.4` → `brew services start mariadb@11.4`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`backend.md` §6.5](architecture/backend.md)).
-- CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 11.4 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
+- 로컬: 개발 기기에 MariaDB 12.3 을 직접 설치해 띄운다(macOS 는 `brew install mariadb` → `brew services start mariadb`). 빈 스키마 하나를 만들고, 접속 정보는 `apps/backend/.env.local` 의 `DATABASE_URL` 에 넣는다([`backend.md` §6.5](architecture/backend.md)).
+- CI: GitHub Actions 의 `services:` 가 띄우는 MariaDB 12.3 에 붙는다. 워크플로 파일이 그 설정의 정본이다.
 - 대가: **로컬에 MariaDB 가 없으면 통합 테스트를 못 돌린다.** T1·T2·T4 는 DB 없이 돌므로 커밋 가드는 영향받지 않는다.
 
 ---
@@ -112,16 +113,17 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 |---|---|---|
 | 1 | 루트 배선 — `package.json`(workspaces) · `lefthook.yml` · `.gitignore` · `.github/workflows/ci.yml` 골격 | 로컬 MariaDB 에 `DATABASE_URL` 로 접속되고 `lefthook install` 이 된다 |
 | 2-1 | **백엔드 골격** — Symfony 7.4 skeleton, 환경 변수 배치, composer 스크립트 5종, 티어별 testsuite, phpstan(max) ([`backend.md`](architecture/backend.md) §1·§6) | `composer -d apps/backend run stan` 과 `test` 가 **테스트 0건으로 초록**. DB 불필요 |
-| 2-2 | **도메인 T1** — 값 객체·엔티티·`ReservationPolicy` 와 목 없는 규칙 테스트 ([`backend.md`](architecture/backend.md) §2·§3) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
+| 2-2 | **도메인 T1** — 값 객체와 큐·세션 정책, 목 없는 규칙 테스트 ([`../README.md`](../README.md) §3 의 규칙이 대상) | T1 초록. `test:testdox` 출력이 한국어 보장 문장으로 읽힌다 |
 | 3 | **T4 가드** — `FeatureCoverageTest` 3종 검사 + 기능 문서 2개 연결 | 라벨 없는 테스트 클래스를 일부러 넣으면 **실패**함을 확인 |
-| 4 | 영속화 + **T2·T3** — Doctrine 매핑·유니크 제약, 응용 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) ([`backend.md`](architecture/backend.md) §4) | 전체 스위트 초록 (로컬 MariaDB 필요) |
-| 5 | HTTP + **OpenAPI** — 컨트롤러·요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` ([`backend.md`](architecture/backend.md) §5) | `apps/backend/openapi/openapi.json` 생성됨 |
+| 4 | 영속화 + **T2·T3** — 매핑·유니크 제약, 서비스와 인메모리 fake 리포지토리(T2), 실 DB 흐름·동시성(T3) | 전체 스위트 초록 (로컬 MariaDB 필요) |
+| 5-1 | **인증** — 세션 기반 로그인(`json_login`), 시드 회원·관리자, 역할 구분 | 로그인 후 현재 회원을 돌려주는 엔드포인트가 T3 로 초록 |
+| 5-2 | HTTP + **OpenAPI** — 태깅·현황·관리자 엔드포인트와 요청/응답 DTO, `nelmio/api-doc-bundle`, `npm run api:spec` | `apps/backend/openapi/openapi.json` 생성됨 |
 | 6 | `packages/api-client` — `openapi-typescript` 로 `src/generated.ts`, 얇은 `index.ts`(ky 인터셉터·거부 사유 에러 타입) | `npm -w packages/api-client run build` 통과 |
-| 7 | `apps/frontend` — Vue 3 + Vite + TS. 예약 화면과 기구 목록. `@gym/api-client` 만 의존 | `vue-tsc --noEmit` + `vite build` 통과 |
+| 7 | `apps/frontend` — Vue 3 + Vite + TS. 현황 목록·기구 상세·관리자 세 화면(+ 로그인 폼). `@gym/api-client` 만 의존 | `vue-tsc --noEmit` + `vite build` 통과 |
 | 8 | **프론트 Vitest** — 4절의 계약 보장 | `vitest run` 초록 |
 | 9 | CI 3잡 완성 — `backend` · `frontend` · **`contract`**(drift 검사) | 스펙을 바꾸고 `api:sync` 를 빼먹으면 CI 가 **실패**함을 확인 |
 
-2단계를 둘로 나눈 이유: **골격과 도메인은 성격이 다르다.** 2-1 은 도구 배선이라 도메인을 몰라도 끝나고, 2-2 는 도구를 다시 건드리지 않는다. 한 칸에 두면 설계 논의가 골격 작업을 붙잡는다.
+2단계와 5단계를 둘로 나눈 이유는 같다: **배선과 설계는 성격이 다르다.** 2-1(골격)·5-1(인증)은 도구를 까는 일이라 업무 규칙을 몰라도 끝나고, 2-2·5-2 는 그 도구를 다시 건드리지 않는다. 한 칸에 두면 설계 논의가 배선 작업을 붙잡는다.
 
 소급하지 않는다: 1~5 단계까지는 프론트가 없어도 백엔드가 그대로 돌아야 한다.
 
@@ -129,9 +131,11 @@ SQLite 대체 경로를 두지 않는다. **동시성 최종 보증(같은 활�
 
 ## 4. 프론트엔드 범위와 최소 보장
 
-화면은 둘: **예약**(가능한 시간을 보고 → 점유(HELD) → 확정 또는 취소)과 **기구 목록**(관리자가 등록·비활성화한 결과를 반영). 넓히지 않는다.
+화면은 셋이다 — **현황 목록**(전체 기구의 사용 중·대기 인원), **기구 상세**(QR 이 가리키는 곳. 태깅·내 순번·남은 시간), **관리자**(기구 등록·최대시간·비활성화·강제 종료). 미인증이면 로그인 폼을 띄운다. 넓히지 않는다. 범위의 정본은 [`../README.md`](../README.md).
 
-프론트의 "최소 보장"(Vitest 로 고정할 것)은 각 기능 문서가 정본이다 — [`features/equipment-reservation/README.md`](features/equipment-reservation/README.md) · [`features/equipment-catalog/README.md`](features/equipment-catalog/README.md).
+프론트의 "최소 보장"(Vitest 로 고정할 것)은 각 기능 문서가 정본이다 — `features/equipment-queue/README.md`(작성 예정) · [`features/equipment-catalog/README.md`](features/equipment-catalog/README.md).
+
+현황 갱신은 폴링이다. 서버 푸시(Mercure)로 올리는 것은 배포층 결정과 함께 다룬다(§7).
 
 > 프론트는 규칙의 **소유자가 아니다.** 판정은 백엔드가 하고, 프론트는 그 계약(타입·거부 사유)을 그대로 반영한다. 프론트 테스트는 "규칙을 다시 구현했는가" 가 아니라 "계약을 지켰는가" 를 본다.
 

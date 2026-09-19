@@ -1,8 +1,10 @@
 # 백엔드 스펙 — 계층 · 도메인 · 영속화 · HTTP 표면
 
-> `apps/backend` 의 **구조와 규칙 파라미터의 정본**이다. 2단계(도메인 T1) 착수 전에 확정해 둔다.
+> ⚠ **§1~§5 는 재작성 대기 중이다.** 시간 슬롯 예약을 전제로 쓰였는데, 제품이 실시간 점유·대기열로 바뀌었다([`../../README.md`](../../README.md)). 재작성 전까지 **구현 근거로 쓰지 않는다.** §6(프로젝트 구성·환경 변수·테스트 배치)은 그대로 유효하다.
 >
-> 되풀이하지 않는 것: 기능이 무엇을 보장하는가 → [`features/`](../features/equipment-reservation/README.md) · 테스트 티어와 라벨 규약 → [`coding/test-as-specification.md`](../coding/test-as-specification.md) · OpenAPI 생성 경로 → [`api-contract.md`](api-contract.md) · 만드는 순서 → [`BUILD-PLAN.md`](../BUILD-PLAN.md).
+> `apps/backend` 의 **구조와 규칙 파라미터의 정본**이다.
+>
+> 되풀이하지 않는 것: 제품 범위 → [`../../README.md`](../../README.md) · 기능이 무엇을 보장하는가 → [`features/`](../features/equipment-catalog/README.md) · 테스트 티어와 라벨 규약 → [`coding/test-as-specification.md`](../coding/test-as-specification.md) · OpenAPI 생성 경로 → [`api-contract.md`](api-contract.md) · 만드는 순서 → [`BUILD-PLAN.md`](../BUILD-PLAN.md).
 >
 > 스택: **PHP 8.4 · Symfony 7.4(LTS) · Doctrine ORM 3 · MariaDB**
 
@@ -147,7 +149,7 @@ past_slot → off_grid → outside_booking_window → equipment_inactive
 
 ### 2.6 만료 — 스케줄러 없이 처리한다
 
-만료 배치 스케줄러는 범위 밖이다([`equipment-reservation`](../features/equipment-reservation/README.md)). 대신 **접근 시점에 정리한다(lazy sweep).**
+만료 정리용 스케줄러는 범위 밖이다([`../../README.md`](../../README.md) §5). 대신 **접근 시점에 정리한다(lazy sweep).**
 
 - 확정 요청: `held_until` 이 지났으면 `EXPIRED` 로 전이시키고 `hold_expired` 로 거부한다.
 - 같은 슬롯에 새 점유 요청이 오면: 그 슬롯의 만료된 홀드를 **같은 트랜잭션 안에서** 먼저 해제하고 진행한다.

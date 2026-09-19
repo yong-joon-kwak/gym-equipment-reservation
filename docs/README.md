@@ -11,6 +11,7 @@ AGENTS.md §1 의 "정책은 다른 파일에 중복 작성하지 않는다" 를
 
 | 사실 | 정본 | 다른 문서에서는 |
 |---|---|---|
+| **제품이 무엇이고 무엇을 하지 않는가** | [`../README.md`](../README.md) | 링크 |
 | 개발 정책·AI 권한 경계·정지선 | [`AGENTS.md`](../AGENTS.md) | 링크 |
 | 왜 모노레포인가 · apps/packages 경계의 근거 | [`architecture/monorepo.md`](architecture/monorepo.md) | 링크 |
 | OpenAPI → TS 계약 생성 경로·도구 선택 | [`architecture/api-contract.md`](architecture/api-contract.md) | 링크 |
@@ -63,7 +64,7 @@ apps/frontend  describe('... [<슬러그>]')  프론트 테스트 라벨
 - kebab-case 명사구. 화면 이름이 아니라 **기능 이름**이다.
 - `FeatureCoverageTest`(T4) 가 슬러그의 실재성과 커버리지 하한을 검사한다 — 자세한 건 [`coding/test-as-specification.md`](coding/test-as-specification.md).
 
-현재 슬러그: `equipment-reservation` · `equipment-catalog`
+현재 슬러그: `equipment-queue` · `equipment-catalog`
 
 ---
 

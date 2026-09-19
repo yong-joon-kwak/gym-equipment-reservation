@@ -147,6 +147,9 @@ Mermaid 는 아래 다섯 종류만 쓴다. 실험 단계 문법(`C4Context`, `b
 | `UC_` | 유스케이스 | `UC_TagEquipment` · `UC_ExtendSession` |
 | `Layer_` | 레이어·모듈 | `Layer_Domain` · `Layer_Infrastructure` |
 | `Ent_` | 엔티티(다른 문서에서 가리킬 때) | `Ent_Equipment` · `Ent_QueueEntry` |
+| `Is` | 판단(분기) 노드. 질문형으로 | `IsAvailable` · `IsMyUsage` |
+| `Reject_` | 거부로 끝나는 결과 | `Reject_Inactive` · `Reject_Cooldown` |
+| `Doc_` | 문서·생성물 | `Doc_OpenApi` |
 
 - `erDiagram` 안에서는 박스 제목이 곧 ID 라, 접두사 없이 PascalCase 논리 이름(`Equipment`)을 쓴다. 변경 포인트나 다른 그림에서 가리킬 때는 `Ent_Equipment` 로 쓴다.
 - `stateDiagram-v2` 의 상태 ID 는 코드의 enum 값(UPPER_SNAKE)을 쓰고, 한국어 이름은 `state "대기 중" as WAITING` 으로 붙인다.
